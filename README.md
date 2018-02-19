@@ -19,7 +19,7 @@ I've credited many of the original ideas and parts that helped make up this scri
 
 # Creating the Uninstall Helpers folder
 
-Supporting files that are needed are found in the "BRU-uninstall-helpers" folder (named exactly that without the quotes).
+Supporting files that are needed should be saved to the "BRU-uninstall-helpers" folder (named exactly that without the quotes).
 
 You'll need to create that folder and get the appropriate uninstall helper files to support removal of programs like:
 McAfee products
