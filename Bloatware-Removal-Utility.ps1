@@ -1703,6 +1703,7 @@ BEGIN {
         "Dell ControlVault",
         "Dell Update",
         "Dell Digital Delivery",
+        "Dell OpenManage Server Administrator",
         "Dell Unified Wireless Suite",
         "HP Hotkey Support", # for brightness/media controls on some HP laptops and 2-in-1s
         "HP Pen Control", # stylus driver
