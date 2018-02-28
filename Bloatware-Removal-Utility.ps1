@@ -1,6 +1,5 @@
 ﻿#BRU
 #By Ricky Cobb
-# lastupdate = "02/20/2018"
 #
 # Bloatware Removal Utility
 # Removes common bloatware from HP, Dell, Lenovo, Sony, Etc
