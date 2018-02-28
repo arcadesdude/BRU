@@ -98,7 +98,7 @@ hideConsole | Out-Null
 $scriptPath = (Split-Path -Parent $MyInvocation.MyCommand.Definition).TrimEnd('\')
 $scriptName = (Split-Path -Leaf $MyInvocation.MyCommand.Definition)
 
-$Script:dest = "C:\corsicatools" # no trailing slash, for iss response files created using Set-Content and copying uninstall helper files so we can remove flash drive or removable media the script is run from if needed
+$Script:dest = "C:\BRU" # no trailing slash, for iss response files created using Set-Content and copying uninstall helper files so we can remove flash drive or removable media the script is run from if needed
 if ( !(Test-path $Script:dest) ) { md -Path $Script:dest | Out-Null }
 Set-Location $Script:dest # if using removable media like a flash drive, will be safe to remove later
 
@@ -109,12 +109,6 @@ Start-Transcript $Script:logfile
 Write-Output "Bloatware-Removal Initializing..." | Out-Default
 
 Write-Output "PowerShell Version: $($PSVersionTable.PSVersion.Major)" | Out-Default
-
-try {
-    Get-CIMInstance Win32_Computersystem | Format-List Name, Manufacturer, Model, SystemType | Out-Default 
-} catch {
-    Get-WMIObject Win32_Computersystem | Format-List Name, Manufacturer, Model, SystemType | Out-Default
-}
 
 try {
     [float]$Script:winVer = (((Get-CimInstance Win32_OperatingSystem).Version.Split('.') | Select -first 2) -join '.')
@@ -468,7 +462,7 @@ $helpAboutMenu.Size = New-Object System.Drawing.Size(152, 22)
 $helpAboutMenu.Text = "&About"
 $helpAboutMenu.TextAlign = "MiddleLeft"
 function showHelpAboutMenu($Sender,$e){
-    [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2017.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!","About Bloatware Removal Utility (BRU)")
+    [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2018.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!","About Bloatware Removal Utility (BRU)")
 }
 $helpMenu.DropDownItems.Add($helpAboutMenu) | Out-Null
 $helpAboutMenu.Add_Click( { showHelpAboutMenu $helpAboutMenu $EventArgs} )
@@ -1655,7 +1649,7 @@ BEGIN {
         "BingSports",
         "BingWeather",
         "BubbleWitch",
-        "CaesarsSlotsFreeCasino"
+        "CaesarsSlotsFreeCasino",
         "CandyCrush",
         "CommsPhone",
         "ConnectivityStore",
