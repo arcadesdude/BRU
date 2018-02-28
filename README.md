@@ -89,4 +89,5 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 
 # Version History
 
-2/28/2018 - Added SpotifyAB UWP app to Windows 1709 suggested apps
+2/28/2018 - Added "SpotifyAB" UWP app to Windows 1709 suggested apps
+          - Option 'After removal set "recommended" UWP app auto-downloads off' now also sets HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager\SystemPaneSuggestionsEnabled to 0
