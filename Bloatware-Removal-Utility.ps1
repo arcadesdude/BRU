@@ -1,6 +1,6 @@
 ﻿#BRU
 #By Ricky Cobb
-# lastupdate = "02/18/2018"
+# lastupdate = "02/20/2018"
 #
 # Bloatware Removal Utility
 # Removes common bloatware from HP, Dell, Lenovo, Sony, Etc
@@ -99,7 +99,7 @@ hideConsole | Out-Null
 $scriptPath = (Split-Path -Parent $MyInvocation.MyCommand.Definition).TrimEnd('\')
 $scriptName = (Split-Path -Leaf $MyInvocation.MyCommand.Definition)
 
-$Script:dest = "C:\BRU" # no trailing slash, for iss response files created using Set-Content and copying uninstall helper files so we can remove flash drive or removable media the script is run from if needed
+$Script:dest = "C:\corsicatools" # no trailing slash, for iss response files created using Set-Content and copying uninstall helper files so we can remove flash drive or removable media the script is run from if needed
 if ( !(Test-path $Script:dest) ) { md -Path $Script:dest | Out-Null }
 Set-Location $Script:dest # if using removable media like a flash drive, will be safe to remove later
 
@@ -1685,6 +1685,7 @@ BEGIN {
         "Shazam",
         "SkypeApp",
         "SlingTV",
+        "SpotifyAB",
         "Sway",
         "Twitter",
         "Wallet",
