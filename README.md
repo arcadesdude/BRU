@@ -86,3 +86,7 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 # After running
 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
+
+# Version History
+
+2/28/2018 - Added SpotifyAB UWP app to Windows 1709 suggested apps
