@@ -66,7 +66,7 @@ Right Click and run as administrator on the BAT file (not the PS1) file.
 The program will get all installed software and show you a list you can pick from what you want to be removed (silently if possible).
 It may take 30 seconds to 3-4 minutes to show depending on the speed of the device it is running on and the total number of installed programs.
 
-![GUI](GUI.PNG?raw=true "List of programs GUI")
+![GUI](GUI1.PNG?raw=true "List of programs GUI")
 
 Carefully review the selected items. Remember this is intended for factory fresh systems to remove bloatware and prepare them for your specific setup -- intended for preparers of computers and IT professionals. Don't simply click remove selected without reviewing the program list.
 
