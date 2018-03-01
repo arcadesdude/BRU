@@ -1354,7 +1354,7 @@ if ( $button -ne "Cancel" ) {
                 $Script:UWPappsAUtoRemove | % {
                     Write-Output "`nRemoving $($_.Name)`nPackageFullName: $($_.PackageFullName)" | Out-Default
                     Remove-AppxPackage $_.PackageFullName
-                    Start-Sleep -Seconds 2
+                    Start-Sleep -Seconds 4
                     Write-Output "Unpinning from Start Menu" | Out-Default
                     $unpinName = $_.Name
                     try {
@@ -1379,7 +1379,7 @@ if ( $button -ne "Cancel" ) {
                 $Script:UWPappsProvisionedAppstoRemove | % {
                     Write-Output "`nRemoving $($_.DisplayName)`nPackageName: $($_.PackageName)" | Out-Default
                     Remove-AppxProvisionedPackage -PackageName $_.PackageName -Online | Out-Null
-                    Start-Sleep -Seconds 2
+                    Start-Sleep -Seconds 4
                     Write-Output "Unpinning from Start Menu" | Out-Default
                     $unpinName = $_.DisplayName
                     try {
@@ -1710,6 +1710,7 @@ BEGIN {
         "Dell Digital Delivery",
         "Dell OpenManage Server Administrator",
         "Dell Unified Wireless Suite",
+        "HP Battery Recall Utility",
         "HP Hotkey Support", # for brightness/media controls on some HP laptops and 2-in-1s
         "HP Pen Control", # stylus driver
         "HP USB Audio", # docking station audio driver
@@ -1763,6 +1764,7 @@ BEGIN {
         "HP Support Assistant",
         "HP Support Solutions Framework",
         "HP Theft Recovery",
+        "HPWorkWise64",
         "HP WorkWise64",
         "HP WorkWise",
         "Theft Recovery for HP ProtectTools",
