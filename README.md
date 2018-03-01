@@ -92,6 +92,13 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 
 # Version History
 
+3/01/2018
+- Added "HPWorkWise64" to UWP app to suggested apps
+- Excluded "HP Battery Recall Utility" from suggested apps
+- Fixed - Increased delay in between removing UWP apps from 2 seconds to 4 seconds
+- Added Screenshot of script running/removing bloatware
+
+
 2/28/2018 
 - Added "SpotifyAB" UWP app to suggested apps
 - Added "CaesarsSlotsFreeCasino" UWP app to suggested apps
