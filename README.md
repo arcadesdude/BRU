@@ -79,6 +79,9 @@ The setting recommended UWP apps auto download off option is supposed to stop UW
 
 The other Windows 10 specific option 'set default start menu layout for new users' will not affect any existing accounts or current users. If a new user profile is created it will though. What this does is once the bloatware UWP apps are removed, they're also unpinned from the start menu so the new user won't see the uninstalled UWP bloatware applicaitons. This doesn't always seems to work and may give an error about the tiledatabase unless windows is updated first. So for setting up the computer, create your setup admin account first, update windows completely, then run this script to remove the bloatware and set the default start menu layout, then create the new user account which should start off without the default tiles pinned to the start menu.
 
+![BRU-Script-Running](BRU-2.PNG?raw=true "BRU Script Running")
+
+
 # Log
 
 Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If running with the automatical reboot option this is handy to see if something did not automatically uninstall and what error message was given.
