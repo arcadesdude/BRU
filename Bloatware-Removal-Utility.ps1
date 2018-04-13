@@ -1,4 +1,4 @@
-﻿#BRU
+#BRU
 #By Ricky Cobb
 #
 # Bloatware Removal Utility
@@ -1654,6 +1654,9 @@ BEGIN {
         "CommsPhone",
         "ConnectivityStore",
         "CyberLinkMediaSuiteEssentials",
+        "DellCustomerConnect",
+        "DellHelpSupport",
+        "DellProductRegistration",
         "DiscoverHPTouchpointManager",
         "DisneyMagicKingdoms",
         "DolbyAccess",
@@ -1667,9 +1670,13 @@ BEGIN {
         "HPJumpStart",
         "iHeartRadio",
         "KeeperSecurity",
+        "LinkedInforWindows",
         "MarchofEmpires",
+        "McAfeeSecurity",
+        "MediaSuiteEssentials",
         "Messaging",
         "Microsoft3DViewer",
+        "Microsoft.Office.Desktop", # Windows Store version of Office
         "MicrosoftOfficeHub",
         "MinecraftUWP",
         "MircastView",
@@ -1680,6 +1687,9 @@ BEGIN {
         "PhototasticCollage",
         "PicsArt",
         "Plex",
+        "Power2Go",
+        "PowerDirector",
+        "PowerMediaPlayer",
         "RoyalRevolt",
         "Shazam",
         "SkypeApp",
