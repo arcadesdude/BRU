@@ -92,8 +92,21 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 
 # Version History
 
+4/13/2018
+- Added "McAfeeSecurity" UWP app to suggested apps
+- Added "LinkedInforWindows" UWP app to suggested apps
+- Added "MediaSuiteEssentials" UWP app to suggested apps
+- Added "Power2Go" UWP app to suggested apps
+- Added "PowerDirector" UWP app to suggested apps
+- Added "PowerMediaPlayer" UWP app to suggested apps
+- Added "DellCustomerConnect" UWP app to suggested apps
+- Added "DellHelpSupport" UWP app to suggested apps
+- Added "DellProductRegistration" UWP app to suggested apps
+- Added "Microsoft.Office.Desktop" UWP app to suggested apps (Windows Store version of Office)
+
+
 3/01/2018
-- Added "HPWorkWise64" to UWP app to suggested apps
+- Added "HPWorkWise64" UWP app to suggested apps
 - Excluded "HP Battery Recall Utility" from suggested apps
 - Fixed - Increased delay in between removing UWP apps from 2 seconds to 4 seconds
 - Added Screenshot of script running/removing bloatware
