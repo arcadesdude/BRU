@@ -1,4 +1,4 @@
-#BRU
+﻿#BRU
 #By Ricky Cobb
 #
 # Bloatware Removal Utility
@@ -1640,6 +1640,7 @@ BEGIN {
         "WinZip.*",
         # Windows 8/10+ UWP apps ######################################################################################
         "3DBuilder",
+        "ACGMediaPlayer",
         "ActiproSoftware",
         "AdobeSystemsIncorporated\.AdobePhotoshopExpress",
         "Asphalt8Airborne",
@@ -1648,6 +1649,7 @@ BEGIN {
         "BingNews",
         "BingSports",
         "BingWeather",
+        "BlueEdge\.OneCalendar",
         "BubbleWitch",
         "CaesarsSlotsFreeCasino",
         "CandyCrush",
@@ -1667,9 +1669,13 @@ BEGIN {
         "FarmVille2CountryEscape",
         "Flipboard",
         "Getstarted",
+        "HiddenCityMysteryofShadows",
         "HPJumpStart",
         "iHeartRadio",
         "KeeperSecurity",
+        "LenovoCompanion",
+        "LenovoCorporation\.LenovoID",
+        "LenovoCorporation\.LenovoSettings",
         "LinkedInforWindows",
         "MarchofEmpires",
         "McAfeeSecurity",
@@ -1699,6 +1705,7 @@ BEGIN {
         "TheNewYorkTimes",
         "TuneInRadio",
         "Twitter",
+        "Viber",
         "Wallet",
         "windowsphone",
         "WinZipUniversal",
@@ -2155,27 +2162,28 @@ BEGIN {
     function selectedProgsListviewtoArray( $programsListview ) {
         $progslistSelected = @()
         $programsListview.items | % { 
-            if ($_.Checked) { 
+            if ($_.Checked) {
                 # take checked items and put into array of format similar to $Script:progslisttoremove to work with easier
-                    $proglistSelectedItem = New-Object –TypeName System.Management.Automation.PSObject
-                    $i = 0; $_.SubItems | % {
-                        if ( $proglistviewColumnsArray[$i] -ne "" ) {  
-                            $currentSubItem = $_
-                            if ( $currentSubItem.Text -eq "" ) {
-                                $proglistselectedItem | Add-Member –MemberType NoteProperty –Name $proglistviewColumnsArray[$i] -Value $null
-                            } else {
-                                $proglistselectedItem | Add-Member –MemberType NoteProperty –Name $proglistviewColumnsArray[$i] -Value $currentSubItem.Text   
-                            }
-                        } 
-                $i++
+                $proglistSelectedItem = New-Object –TypeName System.Management.Automation.PSObject
+                $i = 0; $_.SubItems | % {
+                    if ( $proglistviewColumnsArray[$i] -ne "" ) {  
+                        $currentSubItem = $_
+                        if ( $currentSubItem.Text -eq "" ) {
+                            $proglistselectedItem | Add-Member –MemberType NoteProperty –Name $proglistviewColumnsArray[$i] -Value $null
+                        } else {
+                            $proglistselectedItem | Add-Member –MemberType NoteProperty –Name $proglistviewColumnsArray[$i] -Value $currentSubItem.Text   
+                        }
+                    }
+                    $i++
                 }
+            
                 
-            if ( $proglistselectedItem.PackageName ) {
-                $proglistselectedItem  = $proglistselectedItem | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Select-Object @{Name="DisplayName";Expression={$_.Name}},* -ExcludeProperty Name  
-                $progslistSelected += @( $proglistselectedItem | Select-Object * -ExcludeProperty Name )
-            } else {
-                $progslistSelected += @( $proglistselectedItem | Select-Object * -ExcludeProperty DisplayName )
-            }
+                if ( $proglistselectedItem.PackageName ) {
+                    $proglistselectedItem  = $proglistselectedItem | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Select-Object @{Name="DisplayName";Expression={$_.Name}},* -ExcludeProperty Name  
+                    $progslistSelected += @( $proglistselectedItem | Select-Object * -ExcludeProperty Name )
+                } else {
+                    $progslistSelected += @( $proglistselectedItem | Select-Object * -ExcludeProperty DisplayName )
+                }
 
             } # end if ($_.Checked)
         } # end $programsListview.items | %
