@@ -92,6 +92,16 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 
 # Version History
 
+6/05/2018
+- Added "Viber" UWP app to suggested apps
+- Added "ACGMediaPlayer" UWP app to suggested apps
+- Added "BlueEdge.OneCalendar" UWP app to suggested apps
+- Added "HiddenCityMysteryofShadows" UWP app to suggested apps
+- Added "LenovoCompanion" UWP app to suggested apps
+- Added "LenovoCorporation.LenovoID" UWP app to suggested apps
+- Added "LenovoCorporation.LenovoSettings" UWP app to suggested apps
+
+
 4/13/2018
 - Added "McAfeeSecurity" UWP app to suggested apps
 - Added "LinkedInforWindows" UWP app to suggested apps
