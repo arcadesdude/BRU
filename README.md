@@ -46,6 +46,30 @@ WASP
 HP JumpStart Apps or 'VIP Access' (Comes with old Norton)
 Uses the WASP uninstall helper
 https://wasp.codeplex.com/
+It is a dll file called WASP.dll. 
+
+To get the WASP.dll file Go to https://archive.codeplex.com/?p=wasp
+
+Click on the download archive button (on that page not here ;)
+![image](https://user-images.githubusercontent.com/14213202/45259103-dda56000-b392-11e8-9723-bd4cdb59192e.png)
+
+In the archive
+https://codeplexarchive.blob.core.windows.net/archive/projects/WASP/WASP.zip
+
+Go to the releases\4\55453160-4bf6-41a4-be7f-7cacc781b9b6 file and rename it .zip
+
+![image](https://user-images.githubusercontent.com/14213202/45259074-6ff93400-b392-11e8-8bd4-3514069a80d4.png)
+
+![image](https://user-images.githubusercontent.com/14213202/45259080-7be4f600-b392-11e8-9dd1-ef25d1b87036.png)
+
+![image](https://user-images.githubusercontent.com/14213202/45259088-9fa83c00-b392-11e8-8e84-e8fbf9d9d9fe.png)
+
+The file you need is inside that as WASP.dll, (ver 1.2.0.0, 42kb).
+
+![image](https://user-images.githubusercontent.com/14213202/45259092-bc447400-b392-11e8-8de2-b4e0e0ac7db1.png)
+
+The snap-ins aren't needed just the dll file.
+
 
 OffScrub23.vbs
 Microsoft Office/C2R Office365 Preinstalled Apps
