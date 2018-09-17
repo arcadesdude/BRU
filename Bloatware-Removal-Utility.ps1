@@ -1,4 +1,4 @@
-﻿#BRU
+#BRU
 #By Ricky Cobb
 #
 # Bloatware Removal Utility
@@ -1655,6 +1655,7 @@ BEGIN {
         "CandyCrush",
         "CommsPhone",
         "ConnectivityStore",
+        "CookingFever",
         "CyberLinkMediaSuiteEssentials",
         "DellCustomerConnect",
         "DellHelpSupport",
@@ -1662,6 +1663,7 @@ BEGIN {
         "DiscoverHPTouchpointManager",
         "DisneyMagicKingdoms",
         "DolbyAccess",
+        "DragonManiaLegends",
         "DrawboardPDF",
         "Duolingo",
         "EclipseManager",
@@ -1671,6 +1673,7 @@ BEGIN {
         "Getstarted",
         "HiddenCityMysteryofShadows",
         "HPJumpStart",
+        "HPBusinessSlimKeyboard",
         "iHeartRadio",
         "KeeperSecurity",
         "LenovoCompanion",
@@ -1682,7 +1685,7 @@ BEGIN {
         "MediaSuiteEssentials",
         "Messaging",
         "Microsoft3DViewer",
-        "Microsoft.Office.Desktop", # Windows Store version of Office
+        "Microsoft\.Office\.Desktop_", # Windows Store version of Office
         "MicrosoftOfficeHub",
         "MinecraftUWP",
         "MircastView",
