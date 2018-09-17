@@ -37,10 +37,17 @@ The contents of the 'BRU-Uninstall-Helpers' folder.
 
 # Obtaining Specific Bloatware Uninstall Helpers
 
+streams.exe (for unblocking files and preventing script from getting closed without warning by Windows SmartScreen)
+Streams v1.6 By Mark Russinovich may be downloaded from:
+https://docs.microsoft.com/en-us/sysinternals/downloads/streams
+Place the streams.exe in the BRU-uninstall-helpers folder (streams64.exe is not needed). When the .Bat file is run as administrator it will check for streams.exe and run the commands to remove the Zone.Identifier info that it was downloaded from the internet. If it isn't removed, Windows Smartscreen may suddenly close the Powershell script before it is able to run.
+
+
 devcon
 HP Client Security Manager
 Uses DevCon to disable/reenable DVD/CD drive during uninstallation to prevent an HP uninstaller bug.
 https://networchestration.wordpress.com/2016/07/11/how-to-obtain-device-console-utility-devcon-exe-without-downloading-and-installing-the-entire-windows-driver-kit-100-working-method/
+
 
 WASP
 HP JumpStart Apps or 'VIP Access' (Comes with old Norton)
@@ -71,10 +78,12 @@ The file you need is inside that as WASP.dll, (ver 1.2.0.0, 42kb).
 The snap-ins aren't needed just the dll file.
 
 
+
 OffScrub23.vbs
 Microsoft Office/C2R Office365 Preinstalled Apps
 Uses updated OffScrubc23.vbs for 2013/2016/2017/2018
 https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office-ProPlus-Deployment/Deploy-OfficeClickToRun/OffScrubc2r.vbs
+
 
 MCRP.exe
 McAfee (Consumer) Applications
@@ -117,6 +126,7 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 # Version History
 
 9/16/2018
+- Added streams.exe command in batch file (from Sysinternals) to remove Zone.Identifier so scripts won't get closed without warning by Windows SmartScreen. You'll need to download that separately and put streams.exe in the BRU-uninstall-helpers folder. See "Obtaining Specific Bloatware Uninstall Helpers"
 - Changed Windows Store version of Office detection for preinstalled UWP Office
 - Added "CookingFever" UWP app to suggested apps
 - Added "DragonManiaLegends" UWP app to suggested apps
