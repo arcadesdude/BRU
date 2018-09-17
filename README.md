@@ -58,7 +58,7 @@ It is a dll file called WASP.dll.
 To get the WASP.dll file Go to https://archive.codeplex.com/?p=wasp
 
 Click on the download archive button (on that page not here ;)
-![image](https://user-images.githubusercontent.com/14213202/45259103-dda56000-b392-11e8-9723-bd4cdb59192e.png)
+![Download Archive at Codeplex](https://user-images.githubusercontent.com/14213202/45259103-dda56000-b392-11e8-9723-bd4cdb59192e.png?raw=true)
 
 In the archive
 https://codeplexarchive.blob.core.windows.net/archive/projects/WASP/WASP.zip
