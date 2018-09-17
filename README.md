@@ -116,6 +116,13 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 
 # Version History
 
+9/16/2018
+- Changed Windows Store version of Office detection for preinstalled UWP Office
+- Added "CookingFever" UWP app to suggested apps
+- Added "DragonManiaLegends" UWP app to suggested apps
+- Added "HPBusinessSlimKeyboard" UWP app to suggested apps
+
+
 6/05/2018
 - Added "Viber" UWP app to suggested apps
 - Added "ACGMediaPlayer" UWP app to suggested apps
