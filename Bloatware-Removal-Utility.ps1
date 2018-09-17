@@ -1,4 +1,4 @@
-#BRU
+﻿#BRU
 #By Ricky Cobb
 #
 # Bloatware Removal Utility
