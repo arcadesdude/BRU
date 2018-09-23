@@ -14,13 +14,13 @@ Next step if desired to make it fully GUI:
 
 ---
 
+command line switches to run script silently again with default options
+
 add gui box (ok/cancel?) for system restore point and then with list of selected items for confirming removal
 
 progress dialog in main uninstall loop (use current program / total num of programs)
 
 modify/update gui for better UI/button placement/layout, consider additional winforms/dialogboxes
-
-command line switches to run script silently again with default options
 
 make this warning better by detecting service state and free disk space to state which it is (and if can read option where system protection is enabled/disabled that too to explicitly state the error)
   Write-Warning "A System Restore Point could not be created. Ensure the service is running and System Protection is enabled with enough disk space available.`n`n" | Out-Default
@@ -79,6 +79,26 @@ end removal
 # Using both wmi and registry you get lots of duplicates but we just remove the duplicates after generating and aggregating the list
 # (array) of all installed/registered software (doesn't count software not formally installed or not registered with Windows but it should target everything that appears in the Programs and Features (Add/Remove Programs) list and a little more).
 
+
+# Command Line switches
+
+# -silent (or -quiet, -s, -S), run without GUI, implies auto-confirmation, no warnings just runs the removal with default options
+# -ignoredefault (or -ignoredefaults, -nodefaultsuggestions)
+#     does not automatically remove default suggestions, you'll need to supply what is to be included and what
+#     is to be excluded for removal.
+
+Param(
+        [Parameter(Mandatory=$False,Position=0)]
+         [Alias("silent", "quiet", "s")]
+         [switch]$Global:isSilent,
+        [Parameter(Mandatory=$False,Position=1)]
+        [Alias("ignoredefault", "ignoredefaults", "nodefaultsuggestions")]
+         [switch]$Global:isIgnoreDefault
+     )
+
+
+
+# Go read BEGIN block to follow program flow then come back here to PROCESS
 PROCESS {
 
 if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator" )) { 
@@ -92,7 +112,9 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
 }
 
 $Script:isConsoleShowing = $false
-hideConsole | Out-Null
+if (!($Global:isSilent)) {
+    hideConsole | Out-Null
+}
 
 #Save path that the script is run from (e.g. "usbflashdriveletter:\" )
 $scriptPath = (Split-Path -Parent $MyInvocation.MyCommand.Definition).TrimEnd('\')
@@ -132,6 +154,7 @@ if ( $matches[2] ) {
 $Global:statusupdate =  $null
 
 # Set default options which are saved to file (as [scriptname].ini)
+# Command line parameter switches/values are runtime only and not saved here or in the file
 $Global:globalSettings = @{  # can be any type not just booleans
     "requireSystemRestorePointBeforeRemoval" = $true
     "requireConfirmationBeforeRemoval" = $true
@@ -178,13 +201,17 @@ function saveSettings( ) {
 # in case there are saved settings but a newer version of script has new global variable default to be set
 globalSettingsSetIndividualVariables
 
-if ( !(Test-Path "$($scriptPath)\$($scriptNameNoExtension).ini") ) {
+if ( (!(Test-Path "$($scriptPath)\$($scriptNameNoExtension).ini") -and (!($Global:isSilent))) ) {
     globalSettingsSetIndividualVariables
     saveSettings | Out-Null
     Write-Output "Settings file not found. Creating one and using default settings." | Out-Default
 }
 
-importSettings
+if ( $Global:isSilent ) {
+    Write-Output "Running silently with default settings (ignoring saved preferences file)."
+} else {
+    importSettings
+}
 
 Write-Output "`nUsing Options:" | Out-Default
 For( $i = 0; $i -lt (($Global:globalSettings.Keys).Count); $i++) {
@@ -193,423 +220,448 @@ For( $i = 0; $i -lt (($Global:globalSettings.Keys).Count); $i++) {
 }
 Write-Output "`n" | Out-Default
 
-# Start GUI Init
+# Start GUI Init if not silent
 
-Add-Type -AssemblyName "System.Windows.Forms" | Out-Null
-#[System.Windows.Forms.Application]::EnableVisualStyles()
+if ( !($Global:isSilent) ) {
+    Add-Type -AssemblyName "System.Windows.Forms" | Out-Null
+    #[System.Windows.Forms.Application]::EnableVisualStyles()
 
-$Script:LastColumnClicked = 0
-$Script:LastColumnAscending = $false
+    $Script:LastColumnClicked = 0
+    $Script:LastColumnAscending = $false
 
-# GUI code based on examples by ZeroSevenCodes, https://www.youtube.com/watch?v=GQSQesbw3B0 ,
-$mainUI = New-Object System.Windows.Forms.Form
-$mainUI.Text = "Bloatware Removal Utility"
-$mainUI.Size = New-Object System.Drawing.Size(832,528)
-$mainUI.MinimumSize = New-Object System.Drawing.Size(480,280)
-$mainUI.FormBorderStyle = "Sizable"#FixedDialog"
-$mainUI.SizeGripStyle = "Hide"
-$mainUI.TopMost  = $false
-$mainUI.MaximizeBox  = $true
-$mainUI.MinimizeBox  = $true
-$mainUI.ControlBox = $true
-$mainUI.StartPosition = "CenterScreen"
-$mainUI.WindowState = "Normal" #"Maximized"
-$mainUI.Font = "Segoe UI"
-# base64 icon code from http://www.alkanesolutions.co.uk/2013/04/19/embedding-base64-image-strings-inside-a-powershell-application/
-# get base64 string from here: http://www.base64-image.de
-$mainUIicon = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAmlJREFUeNq0VkEoRFEUnRkjImYSJTVNJjsaOwtqFnazYCc2kxU7Vuws7VhhY6w0G7JQLKYUC0WRDaFsFEpqMs2YaBA5OnV7vf/+92fM3H7z37z737333Xvuec8bab32VFN8niqLn6+D0wgHzQHf1cX7RiqX3inIR6KFPNx9qtpQuHZ9K4TBYN+tccYvK6HgoD/WgGchnEkuZ61aDKBNRrML8xmZgVc1anXGNkWzc21i1CqTUy09vfUl1+D48A17F+fx4SarNp/74t/RRKCEGlDmZp5ofXsvjAAHYo1qlkSLFCNL0JaPos1UngU3aleXn5noQLCmTAeXF0X82q2XHNpF8N8+gAP6KH8HFKln5Tu5J1qvpsIqTI6bCMwOCFDg0qh1WV4DTOcX2xEUAAoTGKR3C8Y1BCgr4dCMBgdAt5QRqDdmABbRxr9IOy+WvAPVCvahpYgUJiGD8kousuCPXKSxDUyLdYRvVyEnB+MjD+BYPNy+HdsgiOmJx/JhivXJlawUUyU77g/uHRDsCqbcvpoTkh3zDiy4h6nProeNEOJBBuvd0br/nskv+W8VMxoKXHL132RnPbaODl/VjhHmsEua2QG+ZuzWYrI8cEyL3JNqnWPJsNmBpNhaCYG/tglZwsiYYbMDhIAu4xhXGGv96UPlFTWZnL+/+zA4WFrrwGm8f9LJr4F3I5ZYBqkzu3IsEWRi40O/THx1/m7gIq2kPJmduwThwx/oD+Ozmy4tCCcUAfJ2dCadLMeGhgV1xqdhHA/W49amsY1mAgFihgcfRL3dQOTSB/FW6naNGvCcAKOoROut9vX9R4ABAAJJVwDVgzCOAAAAAElFTkSuQmCC"
-$iconimageBytes = [Convert]::FromBase64String($mainUIicon)
-$imageStream = New-Object IO.MemoryStream($iconimageBytes, 0, $iconimageBytes.Length)
-$imageStream.Write($iconimageBytes, 0, $iconimageBytes.Length)
-[System.Drawing.Image]::FromStream($imageStream, $true) | Out-Null
-$mainUI.Icon = [System.Drawing.Icon]::FromHandle((New-Object System.Drawing.Bitmap -Argument $imageStream).GetHIcon())
+    # GUI code based on examples by ZeroSevenCodes, https://www.youtube.com/watch?v=GQSQesbw3B0 ,
+    $mainUI = New-Object System.Windows.Forms.Form
+    $mainUI.Text = "Bloatware Removal Utility"
+    $mainUI.Size = New-Object System.Drawing.Size(832,528)
+    $mainUI.MinimumSize = New-Object System.Drawing.Size(480,280)
+    $mainUI.FormBorderStyle = "Sizable"#FixedDialog"
+    $mainUI.SizeGripStyle = "Hide"
+    $mainUI.TopMost  = $false
+    $mainUI.MaximizeBox  = $true
+    $mainUI.MinimizeBox  = $true
+    $mainUI.ControlBox = $true
+    $mainUI.StartPosition = "CenterScreen"
+    $mainUI.WindowState = "Normal" #"Maximized"
+    $mainUI.Font = "Segoe UI"
+    # base64 icon code from http://www.alkanesolutions.co.uk/2013/04/19/embedding-base64-image-strings-inside-a-powershell-application/
+    # get base64 string from here: http://www.base64-image.de
+    $mainUIicon = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAmlJREFUeNq0VkEoRFEUnRkjImYSJTVNJjsaOwtqFnazYCc2kxU7Vuws7VhhY6w0G7JQLKYUC0WRDaFsFEpqMs2YaBA5OnV7vf/+92fM3H7z37z737333Xvuec8bab32VFN8niqLn6+D0wgHzQHf1cX7RiqX3inIR6KFPNx9qtpQuHZ9K4TBYN+tccYvK6HgoD/WgGchnEkuZ61aDKBNRrML8xmZgVc1anXGNkWzc21i1CqTUy09vfUl1+D48A17F+fx4SarNp/74t/RRKCEGlDmZp5ofXsvjAAHYo1qlkSLFCNL0JaPos1UngU3aleXn5noQLCmTAeXF0X82q2XHNpF8N8+gAP6KH8HFKln5Tu5J1qvpsIqTI6bCMwOCFDg0qh1WV4DTOcX2xEUAAoTGKR3C8Y1BCgr4dCMBgdAt5QRqDdmABbRxr9IOy+WvAPVCvahpYgUJiGD8kousuCPXKSxDUyLdYRvVyEnB+MjD+BYPNy+HdsgiOmJx/JhivXJlawUUyU77g/uHRDsCqbcvpoTkh3zDiy4h6nProeNEOJBBuvd0br/nskv+W8VMxoKXHL132RnPbaODl/VjhHmsEua2QG+ZuzWYrI8cEyL3JNqnWPJsNmBpNhaCYG/tglZwsiYYbMDhIAu4xhXGGv96UPlFTWZnL+/+zA4WFrrwGm8f9LJr4F3I5ZYBqkzu3IsEWRi40O/THx1/m7gIq2kPJmduwThwx/oD+Ozmy4tCCcUAfJ2dCadLMeGhgV1xqdhHA/W49amsY1mAgFihgcfRL3dQOTSB/FW6naNGvCcAKOoROut9vX9R4ABAAJJVwDVgzCOAAAAAElFTkSuQmCC"
+    $iconimageBytes = [Convert]::FromBase64String($mainUIicon)
+    $imageStream = New-Object IO.MemoryStream($iconimageBytes, 0, $iconimageBytes.Length)
+    $imageStream.Write($iconimageBytes, 0, $iconimageBytes.Length)
+    [System.Drawing.Image]::FromStream($imageStream, $true) | Out-Null
+    $mainUI.Icon = [System.Drawing.Icon]::FromHandle((New-Object System.Drawing.Bitmap -Argument $imageStream).GetHIcon())
 
-$mainMenuStrip = New-Object System.Windows.Forms.MenuStrip
-$mainMenuStrip.Location = New-Object System.Drawing.Point(0, 0)
-$mainMenuStrip.Name = "mainMenuStrip"
-$mainMenuStrip.Size = New-Object System.Drawing.Size(320, 22)
-#$mainMenuStrip.Padding = 0
-###
-$fileMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$fileMenu.Name = "fileMenu"
-$fileMenu.Size = New-Object System.Drawing.Size(35, 22)
-$fileMenu.Text = "&File"
-$fileMenu.TextAlign = "MiddleLeft"
-###
-$fileExitMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$fileExitMenu.Name = "fileExitMenu"
-$fileExitMenu.Size = New-Object System.Drawing.Size(152, 22)
-$fileExitMenu.Text = "&Exit"
-$fileExitMenu.TextAlign = "MiddleLeft" 
-function doFileExitMenu($Sender,$e){
-    $mainUI.Close()
-    Return
-    #[Environment]::Exit(4)
-}
-$fileMenu.DropDownItems.Add($fileExitMenu) | Out-Null
-$fileExitMenu.Add_Click( { doFileExitMenu $fileExitMenu $EventArgs} )
-###
-$optionsMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$optionsMenu.Name = "optionsMenu"
-$optionsMenu.Size = New-Object System.Drawing.Size(35, 22)
-$optionsMenu.Text = "&Options"
-$optionsMenu.TextAlign = "MiddleCenter"
-###
-$optionsRequireSystemRestorePointMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$optionsRequireSystemRestorePointMenu.Name = "optionsRequireSystemRestorePointMenu"
-$optionsRequireSystemRestorePointMenu.Size = New-Object System.Drawing.Size(152, 22)
-$optionsRequireSystemRestorePointMenu.Text = "Require System Restore &Point before removal"
-$optionsRequireSystemRestorePointMenu.TextAlign = "MiddleLeft"
-$optionsRequireSystemRestorePointMenu.Checked = $Global:requireSystemRestorePointBeforeRemoval
-function doOptionsRequireSystemRestorePointMenu($Sender,$e){
-    $optionsRequireSystemRestorePointMenu.Checked = !($optionsRequireSystemRestorePointMenu.Checked)
-    $Global:requireSystemRestorePointBeforeRemoval = $optionsRequireSystemRestorePointMenu.Checked
-    $hasStatusUpdate = saveSettings
-    if ( $hasStatusUpdate ) {
+    $mainMenuStrip = New-Object System.Windows.Forms.MenuStrip
+    $mainMenuStrip.Location = New-Object System.Drawing.Point(0, 0)
+    $mainMenuStrip.Name = "mainMenuStrip"
+    $mainMenuStrip.Size = New-Object System.Drawing.Size(320, 22)
+    #$mainMenuStrip.Padding = 0
+    ###
+    $fileMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $fileMenu.Name = "fileMenu"
+    $fileMenu.Size = New-Object System.Drawing.Size(35, 22)
+    $fileMenu.Text = "&File"
+    $fileMenu.TextAlign = "MiddleLeft"
+    ###
+    $fileExitMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $fileExitMenu.Name = "fileExitMenu"
+    $fileExitMenu.Size = New-Object System.Drawing.Size(152, 22)
+    $fileExitMenu.Text = "&Exit"
+    $fileExitMenu.TextAlign = "MiddleLeft" 
+    function doFileExitMenu($Sender,$e){
+        $mainUI.Close()
+        Return
+        #[Environment]::Exit(4)
+    }
+    $fileMenu.DropDownItems.Add($fileExitMenu) | Out-Null
+    $fileExitMenu.Add_Click( { doFileExitMenu $fileExitMenu $EventArgs} )
+    ###
+    $optionsMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $optionsMenu.Name = "optionsMenu"
+    $optionsMenu.Size = New-Object System.Drawing.Size(35, 22)
+    $optionsMenu.Text = "&Options"
+    $optionsMenu.TextAlign = "MiddleCenter"
+    ###
+    $optionsRequireSystemRestorePointMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $optionsRequireSystemRestorePointMenu.Name = "optionsRequireSystemRestorePointMenu"
+    $optionsRequireSystemRestorePointMenu.Size = New-Object System.Drawing.Size(152, 22)
+    $optionsRequireSystemRestorePointMenu.Text = "Require System Restore &Point before removal"
+    $optionsRequireSystemRestorePointMenu.TextAlign = "MiddleLeft"
+    $optionsRequireSystemRestorePointMenu.Checked = $Global:requireSystemRestorePointBeforeRemoval
+    function doOptionsRequireSystemRestorePointMenu($Sender,$e){
+        $optionsRequireSystemRestorePointMenu.Checked = !($optionsRequireSystemRestorePointMenu.Checked)
+        $Global:requireSystemRestorePointBeforeRemoval = $optionsRequireSystemRestorePointMenu.Checked
+        $hasStatusUpdate = saveSettings
+        if ( $hasStatusUpdate ) {
+            Write-Output "" | Out-Default
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        }
+    }
+    $optionsRequireSystemRestorePointMenu.Add_Click( { doOptionsRequireSystemRestorePointMenu $optionsRequireSystemRestorePointMenu $EventArgs} )
+    $optionsMenu.DropDownItems.Add($optionsRequireSystemRestorePointMenu) | Out-Null
+    ###
+    $optionsRequireConfirmationMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $optionsRequireConfirmationMenu.Name = "optionsRequireConfirmationMenu"
+    $optionsRequireConfirmationMenu.Size = New-Object System.Drawing.Size(152, 22)
+    $optionsRequireConfirmationMenu.Text = "Require &Confirmation before removal"
+    $optionsRequireConfirmationMenu.TextAlign = "MiddleLeft"
+    $optionsRequireConfirmationMenu.Checked = $Global:requireConfirmationBeforeRemoval
+    function doOptionsRequireConfirmationMenu($Sender,$e){
+        $optionsRequireConfirmationMenu.Checked = !($optionsRequireConfirmationMenu.Checked)
+        $Global:requireConfirmationBeforeRemoval = $optionsRequireConfirmationMenu.Checked
+        $hasStatusUpdate = saveSettings
+        if ( $hasStatusUpdate ) {
+            Write-Output "" | Out-Default
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        }
+    }
+    $optionsRequireConfirmationMenu.Add_Click( { doOptionsRequireConfirmationMenu $optionsRequireConfirmationMenu $EventArgs} )
+    $optionsMenu.DropDownItems.Add($optionsRequireConfirmationMenu) | Out-Null
+    ###
+    $optionsWin10RecommendedDownloadsOffMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $optionsWin10RecommendedDownloadsOffMenu.Name = "optionsWin10RecommendedDownloadsOffMenu"
+    $optionsWin10RecommendedDownloadsOffMenu.Size = New-Object System.Drawing.Size(152, 22)
+    $optionsWin10RecommendedDownloadsOffMenu.Text = "Win10+ only - After removal set `"recommended`" UWP app &auto-downloads off"
+    $optionsWin10RecommendedDownloadsOffMenu.TextAlign = "MiddleLeft"
+    $isWin10 = [bool]($Script:winVer -ge 10)
+    $optionsWin10RecommendedDownloadsOffMenu.Enabled = $isWin10
+    $optionsWin10RecommendedDownloadsOffMenu.Checked = $isWin10 -and $Global:optionsWin10RecommendedDownloadsOff
+    function doOptionsWin10RecommendedDownloadsOffMenu($Sender,$e){
+        $optionsWin10RecommendedDownloadsOffMenu.Checked = !($optionsWin10RecommendedDownloadsOffMenu.Checked)
+        $Global:optionsWin10RecommendedDownloadsOff = $optionsWin10RecommendedDownloadsOffMenu.Checked
+        $hasStatusUpdate = saveSettings
+        if ( $hasStatusUpdate ) {
+            Write-Output "" | Out-Default
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        }
+    }
+    $optionsWin10RecommendedDownloadsOffMenu.Add_Click( { doOptionsWin10RecommendedDownloadsOffMenu $optionsWin10RecommendedDownloadsOffMenu $EventArgs} )
+    $optionsMenu.DropDownItems.Add($optionsWin10RecommendedDownloadsOffMenu) | Out-Null
+    ###
+    $optionsWin10StartMenuAdsMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $optionsWin10StartMenuAdsMenu.Name = "optionsWin10StartMenuAdsMenu"
+    $optionsWin10StartMenuAdsMenu.Size = New-Object System.Drawing.Size(152, 22)
+    $optionsWin10StartMenuAdsMenu.Text = "Win10+ only - After removal set default &Start Menu layout for new users"
+    $optionsWin10StartMenuAdsMenu.TextAlign = "MiddleLeft"
+    $optionsWin10StartMenuAdsMenu.Enabled = $isWin10
+    $optionsWin10StartMenuAdsMenu.Checked = $isWin10 -and $Global:optionsWin10StartMenuAds
+    function doOptionsWin10StartMenuAdsMenu($Sender,$e){
+        $optionsWin10StartMenuAdsMenu.Checked = !($optionsWin10StartMenuAdsMenu.Checked)
+        $Global:optionsWin10StartMenuAds = $optionsWin10StartMenuAdsMenu.Checked
+        $hasStatusUpdate = saveSettings
+        if ( $hasStatusUpdate ) {
+            Write-Output "" | Out-Default
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        }
+    }
+    $optionsWin10StartMenuAdsMenu.Add_Click( { doOptionsWin10StartMenuAdsMenu $optionsWin10StartMenuAdsMenu $EventArgs} )
+    $optionsMenu.DropDownItems.Add($optionsWin10StartMenuAdsMenu) | Out-Null
+    ###
+    $optionsRebootAfterRemovalMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $optionsRebootAfterRemovalMenu.Name = "optionsRebootAfterRemovalMenu"
+    $optionsRebootAfterRemovalMenu.Size = New-Object System.Drawing.Size(152, 22)
+    $optionsRebootAfterRemovalMenu.Text = "&Reboot after removal"
+    $optionsRebootAfterRemovalMenu.TextAlign = "MiddleLeft"
+    $optionsRebootAfterRemovalMenu.Checked = $Global:rebootAfterRemoval
+    function doOptionsRebootAfterRemovalMenu($Sender,$e){
+        $optionsRebootAfterRemovalMenu.Checked = !($optionsRebootAfterRemovalMenu.Checked)
+        $Global:rebootAfterRemoval = $optionsRebootAfterRemovalMenu.Checked
+        $hasStatusUpdate = saveSettings
+        if ( $hasStatusUpdate ) {
+            Write-Output "" | Out-Default
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        }
+    }
+    $optionsRebootAfterRemovalMenu.Add_Click( { doOptionsRebootAfterRemovalMenu $optionsRebootAfterRemovalMenu $EventArgs} )
+    $optionsMenu.DropDownItems.Add($optionsRebootAfterRemovalMenu) | Out-Null
+    ###
+    $viewMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $viewMenu.Name = "viewMenu"
+    $viewMenu.Size = New-Object System.Drawing.Size(35, 22)
+    $viewMenu.Text = "&View"
+    $viewMenu.TextAlign = "MiddleCenter"
+    ###
+    $viewShowMicrosoftPublished = New-Object System.Windows.Forms.ToolStripMenuItem
+    $viewShowMicrosoftPublished.Name = "viewShowMicrosoftPublished"
+    $viewShowMicrosoftPublished.Size = New-Object System.Drawing.Size(152, 22)
+    $viewShowMicrosoftPublished.Text = "Show Published by &Microsoft"
+    $viewShowMicrosoftPublished.TextAlign = "MiddleLeft"
+    $viewShowMicrosoftPublished.Checked = $Global:showMicrosoftPublished
+    function doviewShowMicrosoftPublished($Sender,$e){
+        $viewShowMicrosoftPublished.Checked = !($viewShowMicrosoftPublished.Checked)
+        $Global:showMicrosoftPublished = $viewShowMicrosoftPublished.Checked
+        $hasStatusUpdate = saveSettings
+        if ( $hasStatusUpdate ) {
+            Write-Output "" | Out-Default
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        }
+        Write-Host "View status of $($viewShowMicrosoftPublished.Text.Replace('&','')) changed to: $($Global:showMicrosoftPublished)" | Out-Default
+        $currentSelectedProgs = selectedProgsListviewtoArray $programsListview
+        refreshAlreadyGeneratedProgramsList $currentSelectedProgs
+    }
+    $viewShowMicrosoftPublished.Add_Click( { doviewShowMicrosoftPublished $viewShowMicrosoftPublished $EventArgs} )
+    $viewMenu.DropDownItems.Add($viewShowMicrosoftPublished) | Out-Null
+    ###
+    $viewShowUWPapps = New-Object System.Windows.Forms.ToolStripMenuItem
+    $viewShowUWPapps.Name = "viewShowUWPapps"
+    $viewShowUWPapps.Size = New-Object System.Drawing.Size(152, 22)
+    $viewShowUWPapps.Text = "Win8+ only - Show &UWP/Metro/Modern (Win8/10+) Apps"
+    $viewShowUWPapps.TextAlign = "MiddleLeft"
+    $viewShowUWPapps.Checked = $Global:showUWPapps -and ($winVer -gt 6.1)
+    $viewShowUWPapps.Enabled = ($winVer -gt 6.1)
+    function doviewShowUWPapps($Sender,$e){
+        $viewShowUWPapps.Checked = !($viewShowUWPapps.Checked)
+        $Global:showUWPapps = $viewShowUWPapps.Checked
+        $hasStatusUpdate = saveSettings
+        if ( $hasStatusUpdate ) {
+            Write-Output "" | Out-Default
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        }
+        Write-Host "View status of $($viewShowUWPapps.Text.Replace('&','')) changed to: $($Global:showUWPapps)" | Out-Default
+        $currentSelectedProgs = selectedProgsListviewtoArray $programsListview
+        refreshAlreadyGeneratedProgramsList $currentSelectedProgs
+    }
+    $viewShowUWPapps.Add_Click( { doviewShowUWPapps $viewShowUWPapps $EventArgs} )
+    $viewMenu.DropDownItems.Add($viewShowUWPapps) | Out-Null
+    ###
+    $viewShowSuggestedBloatware = New-Object System.Windows.Forms.ToolStripMenuItem
+    $viewShowSuggestedBloatware.Name = "viewShowSuggestedBloatware"
+    $viewShowSuggestedBloatware.Size = New-Object System.Drawing.Size(152, 22)
+    $viewShowSuggestedBloatware.Text = "Show &Suggested Bloatware"
+    $viewShowSuggestedBloatware.TextAlign = "MiddleLeft"
+    $viewShowSuggestedBloatware.Checked = $true
+    function doviewShowSuggestedBloatware($Sender,$e){
+        toggleSuggestedBloatware
+        Write-Host "View status of $($viewShowSuggestedBloatware.Text.Replace('&','')) changed to: $($Script:showSuggestedtoRemove)" | Out-Default    
+    }
+    $viewShowSuggestedBloatware.Add_Click( { doviewShowSuggestedBloatware $viewShowSuggestedBloatware $EventArgs} )
+    $viewMenu.DropDownItems.Add($viewShowSuggestedBloatware) | Out-Null
+    ###
+    $viewShowConsoleWindow = New-Object System.Windows.Forms.ToolStripMenuItem
+    $viewShowConsoleWindow.Name = "viewShowConsoleWindow"
+    $viewShowConsoleWindow.Size = New-Object System.Drawing.Size(152, 22)
+    $viewShowConsoleWindow.Text = "Show &Console Window"
+    $viewShowConsoleWindow.TextAlign = "MiddleLeft"
+    $viewShowConsoleWindow.Checked = $false
+    function doviewShowConsoleWindow($Sender,$e){
+        toggleConsoleWindow
+        Write-Host "View status of $($viewShowConsoleWindow.Text.Replace('&','')) changed to: $($Script:isConsoleShowing)" | Out-Default
+    }
+    $viewShowConsoleWindow.Add_Click( { doviewShowConsoleWindow $viewShowConsoleWindow $EventArgs} )
+    $viewMenu.DropDownItems.Add($viewShowConsoleWindow) | Out-Null
+    ###
+    $viewRefreshPrograms = New-Object System.Windows.Forms.ToolStripMenuItem
+    $viewRefreshPrograms.Name = "viewRefreshPrograms"
+    $viewRefreshPrograms.Size = New-Object System.Drawing.Size(152, 22)
+    $viewRefreshPrograms.Text = "&Refresh Programs List"
+    $viewRefreshPrograms.TextAlign = "MiddleLeft"
+    function doviewRefreshPrograms($Sender,$e){
         Write-Output "" | Out-Default
+        $Global:statusupdate = "Programs List Refreshing..."
+        Write-Host $Global:statusupdate | Out-Default
         $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
         $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        $currentSelectedProgs = selectedProgsListviewtoArray $programsListview
+        refreshProgramsList
+        $Script:programsListviewWasJustRecreated = $true
+        refreshAlreadyGeneratedProgramsList $currentSelectedProgs # restore matching selected items
+        Write-Host "Programs List Refreshed." | Out-Default
     }
-}
-$optionsRequireSystemRestorePointMenu.Add_Click( { doOptionsRequireSystemRestorePointMenu $optionsRequireSystemRestorePointMenu $EventArgs} )
-$optionsMenu.DropDownItems.Add($optionsRequireSystemRestorePointMenu) | Out-Null
-###
-$optionsRequireConfirmationMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$optionsRequireConfirmationMenu.Name = "optionsRequireConfirmationMenu"
-$optionsRequireConfirmationMenu.Size = New-Object System.Drawing.Size(152, 22)
-$optionsRequireConfirmationMenu.Text = "Require &Confirmation before removal"
-$optionsRequireConfirmationMenu.TextAlign = "MiddleLeft"
-$optionsRequireConfirmationMenu.Checked = $Global:requireConfirmationBeforeRemoval
-function doOptionsRequireConfirmationMenu($Sender,$e){
-    $optionsRequireConfirmationMenu.Checked = !($optionsRequireConfirmationMenu.Checked)
-    $Global:requireConfirmationBeforeRemoval = $optionsRequireConfirmationMenu.Checked
-    $hasStatusUpdate = saveSettings
-    if ( $hasStatusUpdate ) {
-        Write-Output "" | Out-Default
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+    $viewRefreshPrograms.Add_Click( { doviewRefreshPrograms $viewRefreshPrograms $EventArgs} )
+    $viewMenu.DropDownItems.Add($viewRefreshPrograms) | Out-Null
+    ###
+    $helpMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $helpMenu.Name = "helpMenu"
+    $helpMenu.Size = New-Object System.Drawing.Size(51, 22)
+    $helpMenu.Text = "&Help"
+    $helpMenu.TextAlign = "MiddleCenter"
+    ###
+    $helpAboutMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $helpAboutMenu.Name = "helpAboutMenu"
+    $helpAboutMenu.Size = New-Object System.Drawing.Size(152, 22)
+    $helpAboutMenu.Text = "&About"
+    $helpAboutMenu.TextAlign = "MiddleLeft"
+    function showHelpAboutMenu($Sender,$e){
+        [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2018.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!","About Bloatware Removal Utility (BRU)")
     }
-}
-$optionsRequireConfirmationMenu.Add_Click( { doOptionsRequireConfirmationMenu $optionsRequireConfirmationMenu $EventArgs} )
-$optionsMenu.DropDownItems.Add($optionsRequireConfirmationMenu) | Out-Null
-###
-$optionsWin10RecommendedDownloadsOffMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$optionsWin10RecommendedDownloadsOffMenu.Name = "optionsWin10RecommendedDownloadsOffMenu"
-$optionsWin10RecommendedDownloadsOffMenu.Size = New-Object System.Drawing.Size(152, 22)
-$optionsWin10RecommendedDownloadsOffMenu.Text = "Win10+ only - After removal set `"recommended`" UWP app &auto-downloads off"
-$optionsWin10RecommendedDownloadsOffMenu.TextAlign = "MiddleLeft"
-$isWin10 = [bool]($Script:winVer -ge 10)
-$optionsWin10RecommendedDownloadsOffMenu.Enabled = $isWin10
-$optionsWin10RecommendedDownloadsOffMenu.Checked = $isWin10 -and $Global:optionsWin10RecommendedDownloadsOff
-function doOptionsWin10RecommendedDownloadsOffMenu($Sender,$e){
-    $optionsWin10RecommendedDownloadsOffMenu.Checked = !($optionsWin10RecommendedDownloadsOffMenu.Checked)
-    $Global:optionsWin10RecommendedDownloadsOff = $optionsWin10RecommendedDownloadsOffMenu.Checked
-    $hasStatusUpdate = saveSettings
-    if ( $hasStatusUpdate ) {
-        Write-Output "" | Out-Default
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
-    }
-}
-$optionsWin10RecommendedDownloadsOffMenu.Add_Click( { doOptionsWin10RecommendedDownloadsOffMenu $optionsWin10RecommendedDownloadsOffMenu $EventArgs} )
-$optionsMenu.DropDownItems.Add($optionsWin10RecommendedDownloadsOffMenu) | Out-Null
-###
-$optionsWin10StartMenuAdsMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$optionsWin10StartMenuAdsMenu.Name = "optionsWin10StartMenuAdsMenu"
-$optionsWin10StartMenuAdsMenu.Size = New-Object System.Drawing.Size(152, 22)
-$optionsWin10StartMenuAdsMenu.Text = "Win10+ only - After removal set default &Start Menu layout for new users"
-$optionsWin10StartMenuAdsMenu.TextAlign = "MiddleLeft"
-$optionsWin10StartMenuAdsMenu.Enabled = $isWin10
-$optionsWin10StartMenuAdsMenu.Checked = $isWin10 -and $Global:optionsWin10StartMenuAds
-function doOptionsWin10StartMenuAdsMenu($Sender,$e){
-    $optionsWin10StartMenuAdsMenu.Checked = !($optionsWin10StartMenuAdsMenu.Checked)
-    $Global:optionsWin10StartMenuAds = $optionsWin10StartMenuAdsMenu.Checked
-    $hasStatusUpdate = saveSettings
-    if ( $hasStatusUpdate ) {
-        Write-Output "" | Out-Default
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
-    }
-}
-$optionsWin10StartMenuAdsMenu.Add_Click( { doOptionsWin10StartMenuAdsMenu $optionsWin10StartMenuAdsMenu $EventArgs} )
-$optionsMenu.DropDownItems.Add($optionsWin10StartMenuAdsMenu) | Out-Null
-###
-$optionsRebootAfterRemovalMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$optionsRebootAfterRemovalMenu.Name = "optionsRebootAfterRemovalMenu"
-$optionsRebootAfterRemovalMenu.Size = New-Object System.Drawing.Size(152, 22)
-$optionsRebootAfterRemovalMenu.Text = "&Reboot after removal"
-$optionsRebootAfterRemovalMenu.TextAlign = "MiddleLeft"
-$optionsRebootAfterRemovalMenu.Checked = $Global:rebootAfterRemoval
-function doOptionsRebootAfterRemovalMenu($Sender,$e){
-    $optionsRebootAfterRemovalMenu.Checked = !($optionsRebootAfterRemovalMenu.Checked)
-    $Global:rebootAfterRemoval = $optionsRebootAfterRemovalMenu.Checked
-    $hasStatusUpdate = saveSettings
-    if ( $hasStatusUpdate ) {
-        Write-Output "" | Out-Default
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
-    }
-}
-$optionsRebootAfterRemovalMenu.Add_Click( { doOptionsRebootAfterRemovalMenu $optionsRebootAfterRemovalMenu $EventArgs} )
-$optionsMenu.DropDownItems.Add($optionsRebootAfterRemovalMenu) | Out-Null
-###
-$viewMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$viewMenu.Name = "viewMenu"
-$viewMenu.Size = New-Object System.Drawing.Size(35, 22)
-$viewMenu.Text = "&View"
-$viewMenu.TextAlign = "MiddleCenter"
-###
-$viewShowMicrosoftPublished = New-Object System.Windows.Forms.ToolStripMenuItem
-$viewShowMicrosoftPublished.Name = "viewShowMicrosoftPublished"
-$viewShowMicrosoftPublished.Size = New-Object System.Drawing.Size(152, 22)
-$viewShowMicrosoftPublished.Text = "Show Published by &Microsoft"
-$viewShowMicrosoftPublished.TextAlign = "MiddleLeft"
-$viewShowMicrosoftPublished.Checked = $Global:showMicrosoftPublished
-function doviewShowMicrosoftPublished($Sender,$e){
-    $viewShowMicrosoftPublished.Checked = !($viewShowMicrosoftPublished.Checked)
-    $Global:showMicrosoftPublished = $viewShowMicrosoftPublished.Checked
-    $hasStatusUpdate = saveSettings
-    if ( $hasStatusUpdate ) {
-        Write-Output "" | Out-Default
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
-    }
-    Write-Host "View status of $($viewShowMicrosoftPublished.Text.Replace('&','')) changed to: $($Global:showMicrosoftPublished)" | Out-Default
-    $currentSelectedProgs = selectedProgsListviewtoArray $programsListview
-    refreshAlreadyGeneratedProgramsList $currentSelectedProgs
-}
-$viewShowMicrosoftPublished.Add_Click( { doviewShowMicrosoftPublished $viewShowMicrosoftPublished $EventArgs} )
-$viewMenu.DropDownItems.Add($viewShowMicrosoftPublished) | Out-Null
-###
-$viewShowUWPapps = New-Object System.Windows.Forms.ToolStripMenuItem
-$viewShowUWPapps.Name = "viewShowUWPapps"
-$viewShowUWPapps.Size = New-Object System.Drawing.Size(152, 22)
-$viewShowUWPapps.Text = "Win8+ only - Show &UWP/Metro/Modern (Win8/10+) Apps"
-$viewShowUWPapps.TextAlign = "MiddleLeft"
-$viewShowUWPapps.Checked = $Global:showUWPapps -and ($winVer -gt 6.1)
-$viewShowUWPapps.Enabled = ($winVer -gt 6.1)
-function doviewShowUWPapps($Sender,$e){
-    $viewShowUWPapps.Checked = !($viewShowUWPapps.Checked)
-    $Global:showUWPapps = $viewShowUWPapps.Checked
-    $hasStatusUpdate = saveSettings
-    if ( $hasStatusUpdate ) {
-        Write-Output "" | Out-Default
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
-    }
-    Write-Host "View status of $($viewShowUWPapps.Text.Replace('&','')) changed to: $($Global:showUWPapps)" | Out-Default
-    $currentSelectedProgs = selectedProgsListviewtoArray $programsListview
-    refreshAlreadyGeneratedProgramsList $currentSelectedProgs
-}
-$viewShowUWPapps.Add_Click( { doviewShowUWPapps $viewShowUWPapps $EventArgs} )
-$viewMenu.DropDownItems.Add($viewShowUWPapps) | Out-Null
-###
-$viewShowSuggestedBloatware = New-Object System.Windows.Forms.ToolStripMenuItem
-$viewShowSuggestedBloatware.Name = "viewShowSuggestedBloatware"
-$viewShowSuggestedBloatware.Size = New-Object System.Drawing.Size(152, 22)
-$viewShowSuggestedBloatware.Text = "Show &Suggested Bloatware"
-$viewShowSuggestedBloatware.TextAlign = "MiddleLeft"
-$viewShowSuggestedBloatware.Checked = $true
-function doviewShowSuggestedBloatware($Sender,$e){
-    toggleSuggestedBloatware
-    Write-Host "View status of $($viewShowSuggestedBloatware.Text.Replace('&','')) changed to: $($Script:showSuggestedtoRemove)" | Out-Default    
-}
-$viewShowSuggestedBloatware.Add_Click( { doviewShowSuggestedBloatware $viewShowSuggestedBloatware $EventArgs} )
-$viewMenu.DropDownItems.Add($viewShowSuggestedBloatware) | Out-Null
-###
-$viewShowConsoleWindow = New-Object System.Windows.Forms.ToolStripMenuItem
-$viewShowConsoleWindow.Name = "viewShowConsoleWindow"
-$viewShowConsoleWindow.Size = New-Object System.Drawing.Size(152, 22)
-$viewShowConsoleWindow.Text = "Show &Console Window"
-$viewShowConsoleWindow.TextAlign = "MiddleLeft"
-$viewShowConsoleWindow.Checked = $false
-function doviewShowConsoleWindow($Sender,$e){
-    toggleConsoleWindow
-    Write-Host "View status of $($viewShowConsoleWindow.Text.Replace('&','')) changed to: $($Script:isConsoleShowing)" | Out-Default
-}
-$viewShowConsoleWindow.Add_Click( { doviewShowConsoleWindow $viewShowConsoleWindow $EventArgs} )
-$viewMenu.DropDownItems.Add($viewShowConsoleWindow) | Out-Null
-###
-$viewRefreshPrograms = New-Object System.Windows.Forms.ToolStripMenuItem
-$viewRefreshPrograms.Name = "viewRefreshPrograms"
-$viewRefreshPrograms.Size = New-Object System.Drawing.Size(152, 22)
-$viewRefreshPrograms.Text = "&Refresh Programs List"
-$viewRefreshPrograms.TextAlign = "MiddleLeft"
-function doviewRefreshPrograms($Sender,$e){
-    Write-Output "" | Out-Default
-    $Global:statusupdate = "Programs List Refreshing..."
-    Write-Host $Global:statusupdate | Out-Default
-    $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-    $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
-    $currentSelectedProgs = selectedProgsListviewtoArray $programsListview
-    refreshProgramsList
-    $Script:programsListviewWasJustRecreated = $true
-    refreshAlreadyGeneratedProgramsList $currentSelectedProgs # restore matching selected items
-    Write-Host "Programs List Refreshed." | Out-Default
-}
-$viewRefreshPrograms.Add_Click( { doviewRefreshPrograms $viewRefreshPrograms $EventArgs} )
-$viewMenu.DropDownItems.Add($viewRefreshPrograms) | Out-Null
-###
-$helpMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$helpMenu.Name = "helpMenu"
-$helpMenu.Size = New-Object System.Drawing.Size(51, 22)
-$helpMenu.Text = "&Help"
-$helpMenu.TextAlign = "MiddleCenter"
-###
-$helpAboutMenu = New-Object System.Windows.Forms.ToolStripMenuItem
-$helpAboutMenu.Name = "helpAboutMenu"
-$helpAboutMenu.Size = New-Object System.Drawing.Size(152, 22)
-$helpAboutMenu.Text = "&About"
-$helpAboutMenu.TextAlign = "MiddleLeft"
-function showHelpAboutMenu($Sender,$e){
-    [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2018.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!","About Bloatware Removal Utility (BRU)")
-}
-$helpMenu.DropDownItems.Add($helpAboutMenu) | Out-Null
-$helpAboutMenu.Add_Click( { showHelpAboutMenu $helpAboutMenu $EventArgs} )
-###
-$mainMenuStrip.Items.AddRange(@($fileMenu,$optionsMenu,$viewMenu,$helpMenu))
-$mainUI.Controls.Add($mainMenuStrip)
-$mainUI.MainMenuStrip = $mainMenuStrip
-###
-<#
-$allPrograms = New-Object System.Windows.Forms.Label
-$allPrograms.Location = New-Object System.Drawing.Size(8,16)
-$allPrograms.Size = New-Object System.Drawing.Size(320,32)
-$allPrograms.TextAlign = "MiddleLeft"
-$allPrograms.Text = "Please select the applications you wish to remove:"
-$mainUI.Controls.Add($allPrograms)
-#>
-###
-$Global:programsListview = New-Object System.Windows.Forms.ListView # Global to be accessible within functions
-$programsListview.Location = New-Object System.Drawing.Size(8,26)
-$programsListview.Size = New-Object System.Drawing.Size(800,381)
-$programsListview.MinimumSize = New-Object System.Drawing.Size(100,100)
-$programsListview.CheckBoxes = $true
-$programsListview.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
-[System.Windows.Forms.AnchorStyles]::Right -bor
-[System.Windows.Forms.AnchorStyles]::Top -bor
-[System.Windows.Forms.AnchorStyles]::Left
-$programsListview.View = "Details"
-$programsListview.FullRowSelect = $true
-$programsListview.MultiSelect = $true
-$programsListview.Sorting = "None"
-$programsListview.AllowColumnReorder = $true
-$programsListview.GridLines = $true
-$programsListview.Add_ColumnClick({sortprogramsListview $_.Column})
-$programsListview.Add_ItemCheck({updateSelectedProgsStatus $_})
-$mainUI.Controls.Add($programsListview)
+    $helpMenu.DropDownItems.Add($helpAboutMenu) | Out-Null
+    $helpAboutMenu.Add_Click( { showHelpAboutMenu $helpAboutMenu $EventArgs} )
+    ###
+    $mainMenuStrip.Items.AddRange(@($fileMenu,$optionsMenu,$viewMenu,$helpMenu))
+    $mainUI.Controls.Add($mainMenuStrip)
+    $mainUI.MainMenuStrip = $mainMenuStrip
+    ###
+    <#
+    $allPrograms = New-Object System.Windows.Forms.Label
+    $allPrograms.Location = New-Object System.Drawing.Size(8,16)
+    $allPrograms.Size = New-Object System.Drawing.Size(320,32)
+    $allPrograms.TextAlign = "MiddleLeft"
+    $allPrograms.Text = "Please select the applications you wish to remove:"
+    $mainUI.Controls.Add($allPrograms)
+    #>
+    ###
+    $Global:programsListview = New-Object System.Windows.Forms.ListView # Global to be accessible within functions
+    $programsListview.Location = New-Object System.Drawing.Size(8,26)
+    $programsListview.Size = New-Object System.Drawing.Size(800,381)
+    $programsListview.MinimumSize = New-Object System.Drawing.Size(100,100)
+    $programsListview.CheckBoxes = $true
+    $programsListview.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
+    [System.Windows.Forms.AnchorStyles]::Right -bor
+    [System.Windows.Forms.AnchorStyles]::Top -bor
+    [System.Windows.Forms.AnchorStyles]::Left
+    $programsListview.View = "Details"
+    $programsListview.FullRowSelect = $true
+    $programsListview.MultiSelect = $true
+    $programsListview.Sorting = "None"
+    $programsListview.AllowColumnReorder = $true
+    $programsListview.GridLines = $true
+    $programsListview.Add_ColumnClick({sortprogramsListview $_.Column})
+    $programsListview.Add_ItemCheck({updateSelectedProgsStatus $_})
+    $mainUI.Controls.Add($programsListview)
 
-$buttonToggleSuggested = New-Object System.Windows.Forms.Button
-$buttonToggleSuggested.Location = New-Object System.Drawing.Size(8,420)
-$buttonToggleSuggested.Size = New-Object System.Drawing.Size(120,32)
-$buttonToggleSuggested.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
-[System.Windows.Forms.AnchorStyles]::Left
-$buttonToggleSuggested.TextAlign = "MiddleCenter"
-$buttonToggleSuggested.Text = "Toggle Suggested Bloatware"
-$buttonToggleSuggested.Add_Click({doviewShowSuggestedBloatware}) # Reusing View Menu Function
-$buttonToggleSuggested.Enabled = $false
-$mainUI.Controls.Add($buttonToggleSuggested)
+    $buttonToggleSuggested = New-Object System.Windows.Forms.Button
+    $buttonToggleSuggested.Location = New-Object System.Drawing.Size(8,420)
+    $buttonToggleSuggested.Size = New-Object System.Drawing.Size(120,32)
+    $buttonToggleSuggested.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
+    [System.Windows.Forms.AnchorStyles]::Left
+    $buttonToggleSuggested.TextAlign = "MiddleCenter"
+    $buttonToggleSuggested.Text = "Toggle Suggested Bloatware"
+    $buttonToggleSuggested.Add_Click({doviewShowSuggestedBloatware}) # Reusing View Menu Function
+    $buttonToggleSuggested.Enabled = $false
+    $mainUI.Controls.Add($buttonToggleSuggested)
 
-$buttonToggleConsole = New-Object System.Windows.Forms.Button
-$buttonToggleConsole.Location = New-Object System.Drawing.Size(136,420)
-$buttonToggleConsole.Size = New-Object System.Drawing.Size(90,32)
-$buttonToggleConsole.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
-[System.Windows.Forms.AnchorStyles]::Left
-$buttonToggleConsole.TextAlign = "MiddleCenter"
-$buttonToggleConsole.Text = "Show/Hide Console"
-$buttonToggleConsole.Add_Click({doviewShowConsoleWindow}) # Reusing View Menu Function
-$buttonToggleConsole.Enabled = $false
-$mainUI.Controls.Add($buttonToggleConsole)
+    $buttonToggleConsole = New-Object System.Windows.Forms.Button
+    $buttonToggleConsole.Location = New-Object System.Drawing.Size(136,420)
+    $buttonToggleConsole.Size = New-Object System.Drawing.Size(90,32)
+    $buttonToggleConsole.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
+    [System.Windows.Forms.AnchorStyles]::Left
+    $buttonToggleConsole.TextAlign = "MiddleCenter"
+    $buttonToggleConsole.Text = "Show/Hide Console"
+    $buttonToggleConsole.Add_Click({doviewShowConsoleWindow}) # Reusing View Menu Function
+    $buttonToggleConsole.Enabled = $false
+    $mainUI.Controls.Add($buttonToggleConsole)
 
-$buttonConfirmedSelectedforRemoval = New-Object System.Windows.Forms.Button
-$buttonConfirmedSelectedforRemoval.Location = New-Object System.Drawing.Size(591,420)
-$buttonConfirmedSelectedforRemoval.Size = New-Object System.Drawing.Size(120,32)
-$buttonConfirmedSelectedforRemoval.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
-[System.Windows.Forms.AnchorStyles]::Right
-$buttonConfirmedSelectedforRemoval.TextAlign = "MiddleCenter"
-$buttonConfirmedSelectedforRemoval.Text = "Remove Selected"
-$buttonConfirmedSelectedforRemoval.Add_Click({$Script:button = $buttonConfirmedSelectedforRemoval.Text;$mainUI.Close()})
-$buttonConfirmedSelectedforRemoval.Enabled = $false
-$mainUI.Controls.Add($buttonConfirmedSelectedforRemoval)
+    $buttonConfirmedSelectedforRemoval = New-Object System.Windows.Forms.Button
+    $buttonConfirmedSelectedforRemoval.Location = New-Object System.Drawing.Size(591,420)
+    $buttonConfirmedSelectedforRemoval.Size = New-Object System.Drawing.Size(120,32)
+    $buttonConfirmedSelectedforRemoval.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
+    [System.Windows.Forms.AnchorStyles]::Right
+    $buttonConfirmedSelectedforRemoval.TextAlign = "MiddleCenter"
+    $buttonConfirmedSelectedforRemoval.Text = "Remove Selected"
+    $buttonConfirmedSelectedforRemoval.Add_Click({$Script:button = $buttonConfirmedSelectedforRemoval.Text;$mainUI.Close()})
+    $buttonConfirmedSelectedforRemoval.Enabled = $false
+    $mainUI.Controls.Add($buttonConfirmedSelectedforRemoval)
 
-$buttonCancelRemoval = New-Object System.Windows.Forms.Button
-$buttonCancelRemoval.Location = New-Object System.Drawing.Size(719,420)
-$buttonCancelRemoval.Size = New-Object System.Drawing.Size(90,32)
-$buttonCancelRemoval.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
-[System.Windows.Forms.AnchorStyles]::Right
-$buttonCancelRemoval.TextAlign = "MiddleCenter"
-$buttonCancelRemoval.Text = "Cancel"
-$buttonCancelRemoval.Add_Click({$Script:button = $buttonCancelRemoval.Text;$mainUI.Close()})
-$buttonCancelRemoval.Enabled = $false
-$mainUI.Controls.Add($buttonCancelRemoval)
+    $buttonCancelRemoval = New-Object System.Windows.Forms.Button
+    $buttonCancelRemoval.Location = New-Object System.Drawing.Size(719,420)
+    $buttonCancelRemoval.Size = New-Object System.Drawing.Size(90,32)
+    $buttonCancelRemoval.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
+    [System.Windows.Forms.AnchorStyles]::Right
+    $buttonCancelRemoval.TextAlign = "MiddleCenter"
+    $buttonCancelRemoval.Text = "Cancel"
+    $buttonCancelRemoval.Add_Click({$Script:button = $buttonCancelRemoval.Text;$mainUI.Close()})
+    $buttonCancelRemoval.Enabled = $false
+    $mainUI.Controls.Add($buttonCancelRemoval)
 
-$Global:statusBarTextBox = New-Object System.Windows.Forms.StatusBar
-#$statusBarTextBox.Text = "  Status Bar"
-$statusBarTextBox.Width = 830
-$statusBarTextBox.Height = 20
-$statusBarTextBox.Location = New-Object System.Drawing.Size(0,465)
-$statusBarTextBox.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
-[System.Windows.Forms.AnchorStyles]::Right -bor
-[System.Windows.Forms.AnchorStyles]::Left
-#$programsListview.Size = New-Object System.Drawing.Size(4,288)
-#$programsListview.MinimumSize = New-Object System.Drawing.Size(4,100)
-$statusBarTextBox.Font = "Microsoft Sans Serif,10"
-$statusBarTextBox.ShowPanels = $true
-$mainUI.controls.Add($statusBarTextBox)
+    $Global:statusBarTextBox = New-Object System.Windows.Forms.StatusBar
+    #$statusBarTextBox.Text = "  Status Bar"
+    $statusBarTextBox.Width = 830
+    $statusBarTextBox.Height = 20
+    $statusBarTextBox.Location = New-Object System.Drawing.Size(0,465)
+    $statusBarTextBox.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
+    [System.Windows.Forms.AnchorStyles]::Right -bor
+    [System.Windows.Forms.AnchorStyles]::Left
+    #$programsListview.Size = New-Object System.Drawing.Size(4,288)
+    #$programsListview.MinimumSize = New-Object System.Drawing.Size(4,100)
+    $statusBarTextBox.Font = "Microsoft Sans Serif,10"
+    $statusBarTextBox.ShowPanels = $true
+    $mainUI.controls.Add($statusBarTextBox)
 
-$statusBarTextBoxStatusText = New-Object System.Windows.Forms.StatusBarPanel
-$statusBarTextBoxStatusTextIndex = $statusBarTextBox.Panels.Add($statusBarTextBoxStatusText)
-$statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Alignment = "Left"
-$statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].AutoSize = "Spring"
-$statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].MinWidth = 600
-#$statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = '  Status Bar'
-#$statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Tooltip = 'Status Bar Tooltip'
+    $statusBarTextBoxStatusText = New-Object System.Windows.Forms.StatusBarPanel
+    $statusBarTextBoxStatusTextIndex = $statusBarTextBox.Panels.Add($statusBarTextBoxStatusText)
+    $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Alignment = "Left"
+    $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].AutoSize = "Spring"
+    $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].MinWidth = 600
+    #$statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = '  Status Bar'
+    #$statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Tooltip = 'Status Bar Tooltip'
 
-$statusBarTextBoxSelectedProgs = New-Object System.Windows.Forms.StatusBarPanel
-$statusBarTextBoxSelectedProgsIndex = $statusBarTextBox.Panels.Add($statusBarTextBoxSelectedProgs)
-$statusBarTextBox.Panels[$statusBarTextBoxSelectedProgsIndex].Alignment = "Right"
-$statusBarTextBox.Panels[$statusBarTextBoxSelectedProgsIndex].AutoSize = "Spring"
-$statusBarTextBox.Panels[$statusBarTextBoxSelectedProgsIndex].Text = "Selected: 0"
+    $statusBarTextBoxSelectedProgs = New-Object System.Windows.Forms.StatusBarPanel
+    $statusBarTextBoxSelectedProgsIndex = $statusBarTextBox.Panels.Add($statusBarTextBoxSelectedProgs)
+    $statusBarTextBox.Panels[$statusBarTextBoxSelectedProgsIndex].Alignment = "Right"
+    $statusBarTextBox.Panels[$statusBarTextBoxSelectedProgsIndex].AutoSize = "Spring"
+    $statusBarTextBox.Panels[$statusBarTextBoxSelectedProgsIndex].Text = "Selected: 0"
 
-$statusBarTextBoxTotalProgs = New-Object System.Windows.Forms.StatusBarPanel
-$statusBarTextBoxTotalProgsIndex = $statusBarTextBox.Panels.Add($statusBarTextBoxTotalProgs)
-$statusBarTextBox.Panels[$statusBarTextBoxTotalProgsIndex].Alignment = "Right"
-$statusBarTextBox.Panels[$statusBarTextBoxTotalProgsIndex].AutoSize = "Spring"
+    $statusBarTextBoxTotalProgs = New-Object System.Windows.Forms.StatusBarPanel
+    $statusBarTextBoxTotalProgsIndex = $statusBarTextBox.Panels.Add($statusBarTextBoxTotalProgs)
+    $statusBarTextBox.Panels[$statusBarTextBoxTotalProgsIndex].Alignment = "Right"
+    $statusBarTextBox.Panels[$statusBarTextBoxTotalProgsIndex].AutoSize = "Spring"
 
-$Script:showSuggestedtoRemove = $true
-$progslistSelected = $null
-$button = "Cancel" # default if closing window
+    $Script:showSuggestedtoRemove = $true
+    $progslistSelected = $null
+    $button = "Cancel" # default if closing window
 
-################## GUI is Activated and Shown #####################################################################
+    ################## GUI is Activated and Shown #####################################################################
 
-$mainUI.add_Shown({
+    $mainUI.add_Shown({
 
-    if ( $Global:statusupdate ) {
-        Write-Output "" | Out-Default
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
-        Start-Sleep -Seconds 2
-    }
+        if ( $Global:statusupdate ) {
+            Write-Output "" | Out-Default
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+            Start-Sleep -Seconds 2
+        }
 
+        
+        refreshProgramsList
+
+
+    }) # end $mainUI.add_Shown({
+
+    $buttonToggleSuggested.Enabled = $true
+    $buttonToggleConsole.Enabled = $true
+    $buttonCancelRemoval.Enabled = $true
+    $buttonConfirmedSelectedforRemoval.Enabled = $true
+    $mainUI.Activate()    
+    $mainUI.ShowDialog() | Out-Null
+
+    ################## GUI is Closed ##################################################################################
+
+} else { # if running with -silent command line switch
+
+    refreshProgramsList # get default $Script:progslisttoremove
+
+    [int]$Script:numofSelectedProgs = 0
+
+
+    # define what is removed silently
+    # Here is where custom includes/excludes could go and if defaults suggested list is used or not
+
+
+
+
+
+
+    $progslistSelected = $Script:progslisttoremove # using default list for now
+    [int]$Script:numofSelectedProgs = @('0',($progslistSelected | Measure-Object).Count)[($progslistSelected | Measure-Object).Count -gt 0]
+
+
+
+
+} # end if ( !($Global:isSilent) )
+
+if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
     
-    refreshProgramsList
-
-
-}) # end $mainUI.add_Shown({
-
-$buttonToggleSuggested.Enabled = $true
-$buttonToggleConsole.Enabled = $true
-$buttonCancelRemoval.Enabled = $true
-$buttonConfirmedSelectedforRemoval.Enabled = $true
-$mainUI.Activate()    
-$mainUI.ShowDialog() | Out-Null
-
-################## GUI is Closed ##################################################################################
-
-if ( $button -ne "Cancel" ) {
-    showConsole | Out-Null
-    # Create array from the selected listview items
-    # might be a way to use .CopyTo() method for object System.array and then change that to powershell array but this works
+    if ( !($Global:isSilent) ) {
+        showConsole | Out-Null
+    }
 
     Write-Output "`nUsing Options Chosen:" | Out-Default
     For( $i = 0; $i -lt (($Global:globalSettings.Keys).Count); $i++) {
@@ -618,8 +670,14 @@ if ( $button -ne "Cancel" ) {
     }
     Write-Output "`n" | Out-Default
 
-    $progslistSelected = selectedProgsListviewtoArray $programsListview
+    if ( !($Global:isSilent) ) {
+        # Create array from the selected listview items
+        # might be a way to use .CopyTo() method for object System.array and then change that to powershell array but this works
+        $progslistSelected = selectedProgsListviewtoArray $programsListview
+    }
 
+
+    # At this poing, both silent or GUI based selections have been made
     if ( $progslistSelected -ne $null ) {
 
         # $progslistSelectedOriginal = $proglistSelected # save selection?
@@ -679,6 +737,18 @@ if ( $button -ne "Cancel" ) {
 
         Write-Output "" | Out-Default
         Write-Output "Up to this point no changes have been made. Below this point is where software starts being removed.`n" | Out-Default
+
+
+
+
+
+
+# CONTINUE READING THROUGH HERE WITH SILENT SWITCH IN MIND FOR BRANCHING PROGRAM CONTROL AND KEEP IN MIND UNDEFINED VARIABLES AND STUFF ONLY DEFINED DURING GUI CODE FUNCTIONS AND CONFIRMATION REQUESTS FOR USER INPUT
+
+
+
+
+
 
         $isConfirmed = systemRestorePointIfRequired
        
@@ -1484,12 +1554,18 @@ BEGIN {
         Write-Output "" | Out-Default
         $Global:statusupdate = "Generating and filtering programs list, please wait..."
         Write-Verbose -Verbose "$($Global:statusupdate)`n"
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        
+        if ( !($Global:isSilent) ) {                
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        }
 
         # Get an initial list of installed programs and save it
-        try { $Script:proglistwithdupes = Get-CIMInstance -class Win32_Product } 
-        catch { $Script:proglistwithdupes = Get-WMIobject -class Win32_Product }
+        try {
+            $Script:proglistwithdupes = Get-CIMInstance -class Win32_Product
+        } catch {
+            $Script:proglistwithdupes = Get-WMIobject -class Win32_Product
+        }
 
         $a = (Get-ChildItem -Recurse HKLM:Software\Microsoft\Windows\CurrentVersion\Uninstall | gp | Where { $_.DisplayName -ne $null -and $_.UninstallString -ne $null } )
         $b = $null
@@ -1512,8 +1588,11 @@ BEGIN {
             Write-Verbose -Verbose "All Users UWP Win8/Win10+ Apps:"
             Write-Output "" | Out-Default
             $Global:statusupdate = "Processing Windows8/10+ UWP Apps..."
-            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+
+            if ( !($Global:isSilent) ) {
+                $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+                $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+            }
 
             try {
                 $ErrorActionPreference = "SilentlyContinue"
@@ -1529,7 +1608,7 @@ BEGIN {
             $Global:UWPappsProvisionedApps = Get-AppxProvisionedPackage -Online
             $Global:UWPappsProvisionedApps | % { Write-Output "PackageName: $($_.PackageName)`n" } | Out-Default
             
-        }
+        } # end if ( $Script:winVer -gt 6.1)
 
         ###############################################################################################################
 
@@ -1544,8 +1623,11 @@ BEGIN {
         Write-Output "" | Out-Default
         $Global:statusupdate = "Deduplicating programs list..."
         Write-Verbose -Verbose "$($Global:statusupdate)`n"
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+
+        if ( !($Global:isSilent) ) {
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        }
 
         <#
         Deduplication logic
@@ -1592,8 +1674,11 @@ BEGIN {
         Write-Output "" | Out-Default
         $Global:statusupdate = "Enumerating suggested bloatware to remove..."
         Write-Verbose -Verbose "$($Global:statusupdate)`n"
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+
+        if ( !($Global:isSilent) ) {
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+        }
 
         $bloatwarelike = ( 
         # include, in regular expression format
@@ -1839,38 +1924,50 @@ BEGIN {
         #$Global:UWPappsAU exists
         #$Global:UWPappsProvisionedApps exists
 
-        # following 3 variables are modified by the GUI selection list
-        #$Script:progslisttoremove exists
-        #$Script:UWPappsAUtoRemove exists
-        #$Script:UWPappsProvisionedAppstoRemove exists
+        if ( !($Global:isSilent) ) {
 
-        $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
-        $Global:progslisttodisplay = $Global:proglist | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
-        #$Global:orignalprogslisttodisplay = $Global:progslisttodisplay
-        # Add in the UWP Win8/10+ apps to the list
-        $Global:UWPappsAUlisttodisplay = $Global:UWPappsAU | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
-        $Global:UWPappsProvisionedAppslisttodisplay = $Global:UWPappsProvisionedApps | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
-        $Global:progslisttodisplay += $Global:UWPappsAUlisttodisplay
-        $Global:progslisttodisplay += $Global:UWPappsProvisionedAppslisttodisplay
+            # following 3 variables are modified by the GUI selection list
+            #$Script:progslisttoremove exists
+            #$Script:UWPappsAUtoRemove exists
+            #$Script:UWPappsProvisionedAppstoRemove exists
 
-        [int]$Global:numofprogs = @('0',($Global:progslisttodisplay | Measure-Object).Count)[($Global:progslisttodisplay | Measure-Object).Count -gt 0]
-        # the Where { $_ }  in the following statement is useful if the Get-AppxPackage or Get-AppxProvisionedPackage services were off and the result returned to them was a bunch of boolean false statements
-        $Global:progslisttoshowchecked = @($Script:progslisttoremove | Where { $_ } | Select-Object $proglistviewColumnsArray -ExcludeProperty DisplayName) + @($Script:UWPappsAUtoRemove | Where { $_ } | Select-Object $proglistviewColumnsArray -ExcludeProperty DisplayName) + @($Script:UWPappsProvisionedAppstoRemove | Where { $_ } | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName) | Sort Name
+            $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
+            $Global:progslisttodisplay = $Global:proglist | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
+            #$Global:orignalprogslisttodisplay = $Global:progslisttodisplay
+            # Add in the UWP Win8/10+ apps to the list
+            $Global:UWPappsAUlisttodisplay = $Global:UWPappsAU | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
+            $Global:UWPappsProvisionedAppslisttodisplay = $Global:UWPappsProvisionedApps | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
+            $Global:progslisttodisplay += $Global:UWPappsAUlisttodisplay
+            $Global:progslisttodisplay += $Global:UWPappsProvisionedAppslisttodisplay
 
-        generateProgListView $Global:progslisttodisplay
-        if ( $Script:showSuggestedtoRemove ) {
-            generateProgListViewChecked $Global:progslisttoshowchecked
-        }
+            [int]$Global:numofprogs = @('0',($Global:progslisttodisplay | Measure-Object).Count)[($Global:progslisttodisplay | Measure-Object).Count -gt 0]
 
-        Write-Output "" | Out-Default
-        Write-Verbose -Verbose "Please make your selection in the GUI list."
+            # the Where { $_ }  in the following statement is useful if the Get-AppxPackage or Get-AppxProvisionedPackage services were off and the result returned to them was a bunch of boolean false statements
+            $Global:progslisttoshowchecked = @($Script:progslisttoremove | Where { $_ } | Select-Object $proglistviewColumnsArray -ExcludeProperty DisplayName) + @($Script:UWPappsAUtoRemove | Where { $_ } | Select-Object $proglistviewColumnsArray -ExcludeProperty DisplayName) + @($Script:UWPappsProvisionedAppstoRemove | Where { $_ } | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName) | Sort Name
 
-        $Global:statusupdate = "Programs list generated and suggested bloatware preselected." 
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
-       
-        Write-Output "" | Out-Default
+            generateProgListView $Global:progslisttodisplay
+            if ( $Script:showSuggestedtoRemove ) {
+                generateProgListViewChecked $Global:progslisttoshowchecked
+            }
 
+            Write-Output "" | Out-Default
+            Write-Verbose -Verbose "Please make your selection in the GUI list."
+
+            $Global:statusupdate = "Programs list generated and suggested bloatware preselected." 
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+           
+            Write-Output "" | Out-Default
+
+        } else { # if running silently
+
+            $Global:progslisttodisplay += $Global:UWPappsAUlist
+            $Global:progslisttodisplay += $Global:UWPappsProvisionedAppslist
+            [int]$Global:numofprogs = @('0',($Global:proglisttodisplay | Measure-Object).Count)[($Global:proglisttodisplay | Measure-Object).Count -gt 0]
+            Write-Output "" | Out-Default
+            Write-Output "Total number of programs: $($Global:numofprogs)"
+
+        } # end if ( !($Global:isSilent) )
 
     } # End function refreshProgramsList
 
