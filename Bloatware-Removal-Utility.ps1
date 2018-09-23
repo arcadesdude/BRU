@@ -86,6 +86,7 @@ end removal
 # -ignoredefault (or -nd, -id, -ignoredefaults, -nodefaultsuggestions)
 #     does not automatically remove default suggestions, you'll need to supply what is to be included and what
 #     is to be excluded for removal.
+# -reboot (or -rebootafterremoval), if option is specficied, will reboot after removal in -silent mode without confirmation
 
 Param(
         [Parameter(Mandatory=$False,Position=0)]
@@ -93,7 +94,10 @@ Param(
          [switch]$Global:isSilent,
         [Parameter(Mandatory=$False,Position=1)]
         [Alias("nd", "id", "ignoredefault", "ignoredefaults", "ignoredefaultsuggestions", "nodefaultsuggestions")]
-         [switch]$Global:isIgnoreDefaultSuggestionList
+         [switch]$Global:isIgnoreDefaultSuggestionList,
+        [Parameter(Mandatory=$False,Position=2)]
+        [Alias("reboot", "rebootafterremoval")]
+         [switch]$Global:isRebootAfterRemovalswitch
      )
 
 
@@ -214,10 +218,24 @@ if ( $Global:isSilent ) { # Running silently ignores the saved preferences file
     importSettings
 }
 
+# If Running Silently set up options based on the command line options
 if ( $Global:isSilent ) { # -silent always implies no confirmation prompts
     $Global:requireConfirmationBeforeRemoval = $false
     $Global:globalSettings["requireConfirmationBeforeRemoval"] = $Global:requireConfirmationBeforeRemoval
+    if ( $Global:isRebootAfterRemovalswitch ) {
+        $Global:rebootAfterRemoval = $true
+        $Global:globalSettings["rebootAfterRemoval"] = $Global:rebootAfterRemoval
+    }
+
+
+
+
+
+
+
 }
+
+
 
 Write-Output "`nUsing Options:" | Out-Default
 For( $i = 0; $i -lt (($Global:globalSettings.Keys).Count); $i++) {
