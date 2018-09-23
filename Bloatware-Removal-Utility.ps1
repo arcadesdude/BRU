@@ -83,7 +83,7 @@ end removal
 # Command Line switches
 
 # -silent (or -quiet, -s, -S), run without GUI, implies auto-confirmation, no warnings just runs the removal with default options
-# -ignoredefault (or -ignoredefaults, -nodefaultsuggestions)
+# -ignoredefault (or -nd, -id, -ignoredefaults, -nodefaultsuggestions)
 #     does not automatically remove default suggestions, you'll need to supply what is to be included and what
 #     is to be excluded for removal.
 
@@ -92,8 +92,8 @@ Param(
          [Alias("silent", "quiet", "s")]
          [switch]$Global:isSilent,
         [Parameter(Mandatory=$False,Position=1)]
-        [Alias("ignoredefault", "ignoredefaults", "nodefaultsuggestions")]
-         [switch]$Global:isIgnoreDefault
+        [Alias("nd", "id", "ignoredefault", "ignoredefaults", "ignoredefaultsuggestions", "nodefaultsuggestions")]
+         [switch]$Global:isIgnoreDefaultSuggestionList
      )
 
 
@@ -122,6 +122,7 @@ $scriptName = (Split-Path -Leaf $MyInvocation.MyCommand.Definition)
 
 $Script:dest = "C:\BRU" # no trailing slash, for iss response files created using Set-Content and copying uninstall helper files so we can remove flash drive or removable media the script is run from if needed
 if ( !(Test-path $Script:dest) ) { md -Path $Script:dest | Out-Null }
+$savedPathLocation = Get-Location # if running in console with silent switch save to be restored later
 Set-Location $Script:dest # if using removable media like a flash drive, will be safe to remove later
 
 $Script:logfile = [string]$Script:dest+$("\Bloatware-Removal-"+$(get-date -uformat %d-%b-%Y-%H-%M)+".log")
@@ -207,10 +208,15 @@ if ( (!(Test-Path "$($scriptPath)\$($scriptNameNoExtension).ini") -and (!($Globa
     Write-Output "Settings file not found. Creating one and using default settings." | Out-Default
 }
 
-if ( $Global:isSilent ) {
-    Write-Output "Running silently with default settings (ignoring saved preferences file)."
+if ( $Global:isSilent ) { # Running silently ignores the saved preferences file
+    Write-Output "`nRunning silently using -silent switch."
 } else {
     importSettings
+}
+
+if ( $Global:isSilent ) { # -silent always implies no confirmation prompts
+    $Global:requireConfirmationBeforeRemoval = $false
+    $Global:globalSettings["requireConfirmationBeforeRemoval"] = $Global:requireConfirmationBeforeRemoval
 }
 
 Write-Output "`nUsing Options:" | Out-Default
@@ -663,13 +669,13 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         showConsole | Out-Null
     }
 
+    if ( ($Global:isSilent) ) {
+        Write-Output "`nRunning silently using -silent switch."
+    }
     Write-Output "`nUsing Options Chosen:" | Out-Default
     For( $i = 0; $i -lt (($Global:globalSettings.Keys).Count); $i++) {
         $settingname = ($Global:globalSettings.Keys | Select-Object -Index $i)
         Write-Output "$($settingname): $($Global:globalSettings[$($settingname)])" | Out-Default
-    }
-    if ( ($Global:isSilent) ) {
-        Write-Output "Running silently using -silent switch."
     }
     Write-Output "`n" | Out-Default
 
@@ -1496,7 +1502,12 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
  
     #    if ( !($Script:progslisttoremove) -and !($Script:UWPappsAUtoRemove) -and !($Script:UWPappsProvisionedAppstoRemove) ) {
             Write-Output "" | Out-Default
-            Write-Output "No Bloatware was selected." | Out-Default
+            $nonefoundmessage = "No Bloatware was selected"
+            if ( $Global:isSilent ) {
+                $nonefoundmessage += " or matched"
+            }
+            $nonefoundmessage += "."
+            Write-Output $nonefoundmessage | Out-Default
     #   } # end of if ( ($Script:progslisttoremove) -or ($Script:UWPappsAUtoRemove) -or ($Script:UWPappsProvisionedAppstoRemove) )
 
         $isConfirmed = $false
@@ -1513,6 +1524,9 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
         Write-Output "" | Out-Default
         stopTranscript
+        if ( $Global:isSilent ) { # Restore working directory path if running with -silent switch
+            Set-Location $savedPathLocation
+        }
         Return
     }
 
@@ -1527,6 +1541,10 @@ if ( $button -eq "Cancel" -and !($Global:isSilent) ) {
     Write-Output "Removing Log file as removal was canceled or window closed." | Out-Default
     Remove-Item -Force $Script:logfile
     [Environment]::Exit(4) # User Canceled 
+}
+
+if ( $Global:isSilent ) { # Restore working directory path if running with -silent switch
+    Set-Location $savedPathLocation
 }
 
 
@@ -1881,6 +1899,12 @@ BEGIN {
 
         # skip special cases, then add them back at the end later
 
+        if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) { # no default suggestions if -nd or -ignoredefaults switch
+            $bloatwarelike = ""
+            $bloatwarenotmatch = ""
+            $specialcasestoremovesinglestring = ""
+        }
+
         $bloatwarenotmatchsinglestring = (($bloatwarenotmatch | % { ".*$([regex]::Escape($_)).*$" }) -join '|') # turn into single string for regex exluding
         $Script:specialcasestoremovesinglestring = (($specialcasestoremove | % { ".*$([regex]::Escape($_)).*$" }) -join '|')
         $bloatwarelikesinglestring = (($bloatwarelike | % { $_ }) -join '|') #$bloatware like is not escaped here
@@ -1893,7 +1917,9 @@ BEGIN {
 
         Write-Output "" | Out-Default
         Write-Output "Bloatware suggested for removal (non UWP Win8/Win10+ Apps):`n" | Out-Default
-
+        if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) {
+            Write-Output "Nothing suggested because running with -ignoredefaultsuggestions switch."
+        }
         $Script:progslisttoremove | Out-Default | Format-List
 
         ###############################################################################################################
@@ -1906,10 +1932,16 @@ BEGIN {
 
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "All Users UWP Win8/Win10+ Apps Suggested for Removal:"
+            if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) {
+                Write-Output "Nothing suggested because running with -ignoredefaultsuggestions switch."
+            }
             Write-Output "" | Out-Default
             $Script:UWPappsAUtoRemove | % { $_.PackageFullName | Out-Default }
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "All Users Provisioned UWP Win8/Win10+ Apps Suggested for Removal:"
+            if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) {
+                Write-Output "Nothing suggested because running with -ignoredefaultsuggestions switch."
+            }
             Write-Output "" | Out-Default
             $Script:UWPappsProvisionedAppstoRemove | % { $_.PackageName | Out-Default }
         }
@@ -1958,9 +1990,10 @@ BEGIN {
 
         } else { # if running silently
 
-            $Global:progslisttodisplay += $Global:UWPappsAUlist
-            $Global:progslisttodisplay += $Global:UWPappsProvisionedAppslist
-            [int]$Global:numofprogs = @('0',($Global:proglisttodisplay | Measure-Object).Count)[($Global:proglisttodisplay | Measure-Object).Count -gt 0]
+            $Global:progslisttodisplay = $Global:proglist | Sort-Object Name
+            $Global:progslisttodisplay += $Global:UWPappsAU | Sort-Object Name
+            $Global:progslisttodisplay += $Global:UWPappsProvisionedApps | Sort-Object Name
+            [int]$Global:numofprogs = @('0',($Global:progslisttodisplay | Measure-Object).Count)[($Global:progslisttodisplay | Measure-Object).Count -gt 0]
             Write-Output "" | Out-Default
             Write-Output "Total number of programs: $($Global:numofprogs)"
 
