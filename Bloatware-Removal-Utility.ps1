@@ -668,6 +668,9 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         $settingname = ($Global:globalSettings.Keys | Select-Object -Index $i)
         Write-Output "$($settingname): $($Global:globalSettings[$($settingname)])" | Out-Default
     }
+    if ( ($Global:isSilent) ) {
+        Write-Output "Running silently using -silent switch."
+    }
     Write-Output "`n" | Out-Default
 
     if ( !($Global:isSilent) ) {
@@ -738,18 +741,6 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         Write-Output "" | Out-Default
         Write-Output "Up to this point no changes have been made. Below this point is where software starts being removed.`n" | Out-Default
 
-
-
-
-
-
-# CONTINUE READING THROUGH HERE WITH SILENT SWITCH IN MIND FOR BRANCHING PROGRAM CONTROL AND KEEP IN MIND UNDEFINED VARIABLES AND STUFF ONLY DEFINED DURING GUI CODE FUNCTIONS AND CONFIRMATION REQUESTS FOR USER INPUT
-
-
-
-
-
-
         $isConfirmed = systemRestorePointIfRequired
        
         if ( $Global:requireConfirmationBeforeRemoval -and $isConfirmed ) { # options chosen, no system restore point but wants confirmation
@@ -804,12 +795,14 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                 }
             } # end if ( $Script:progslisttoremove -match "McAfee" )
 
-            #http://scriptolog.blogspot.com/2007/09/playing-sounds-in-powershell.html
-            $soundloc = "c:\Windows\Media\Speech On.wav"
-            if (Test-Path $soundloc) {
-                $sound = New-Object System.Media.SoundPlayer;
-                $sound.SoundLocation = $soundloc;
-                $sound.Play();
+            if ( !($Global:isSilent) ) { # ensure literal silence (no sounds :)
+                #http://scriptolog.blogspot.com/2007/09/playing-sounds-in-powershell.html
+                $soundloc = "c:\Windows\Media\Speech On.wav"
+                if (Test-Path $soundloc) {
+                    $sound = New-Object System.Media.SoundPlayer;
+                    $sound.SoundLocation = $soundloc;
+                    $sound.Play();
+                }
             }
 
             Write-Output "" | Out-Default
@@ -1471,11 +1464,14 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
     ###############################################################################################################
 
         if ( $isConfirmed ) {
+
+            if ( !($Global:isSilent) ) { # literal silence again
             $soundloc = "c:\Windows\Media\tada.wav"
-            if (Test-Path $soundloc) {
-                $sound = New-Object System.Media.SoundPlayer;
-                $sound.SoundLocation = $soundloc;
-                $sound.Play();
+                if (Test-Path $soundloc) {
+                    $sound = New-Object System.Media.SoundPlayer;
+                    $sound.SoundLocation = $soundloc;
+                    $sound.Play();
+                }
             }
 
             Write-Output "" | Out-Default
@@ -1520,18 +1516,19 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         Return
     }
 
-} # end if ( $button -ne "Cancel" ) # Cancel was clicked or window closed or not confirmed to continue
+} # end if ( ($button -ne "Cancel") -or ($Global:isSilent) ) # Cancel was clicked or window closed or not confirmed to continue
 
 if (  !($isConfirmed) ) {
     Write-Output "" | Out-Default
     Stop-Transcript
 }
 
-if ( $button -eq "Cancel" ) {
+if ( $button -eq "Cancel" -and !($Global:isSilent) ) {
     Write-Output "Removing Log file as removal was canceled or window closed." | Out-Default
     Remove-Item -Force $Script:logfile
     [Environment]::Exit(4) # User Canceled 
 }
+
 
 Return
 
@@ -2029,7 +2026,7 @@ BEGIN {
 #############
 
     function systemRestorePointIfRequired( ) {
-        if ( $Global:requireSystemRestorePointBeforeRemoval ) {
+        if ( $Global:requireSystemRestorePointBeforeRemoval -or $Global:isSilent ) {
             Write-Host "`nProceed with System Restore Point Creation and Continue?`n" | Out-Default
 
             [bool]$isConfirmed = doOptionsRequireConfirmation
@@ -2123,8 +2120,11 @@ BEGIN {
 
     function doOptionsRequireConfirmation( ) {
     # Waits for input, returns $true if y or Y pressed, not case sensitive
-    # or just returns $true when option for no confirmation required is set
-        if ( !($Global:requireConfirmationBeforeRemoval) ) {
+    # or just returns $true when option for no confirmation required is set or running with -silent switch
+        if ( !($Global:requireConfirmationBeforeRemoval) -or $Global:isSilent ) {
+            if ( $Global:isSilent ) {
+                Write-Verbose -Verbose "Running with -silent switch implies confirmation request is not required."
+            }
             Write-Verbose -Verbose "You have chosen option to not require confirmation, continuing..."
             return $true
         } else {
