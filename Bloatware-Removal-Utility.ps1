@@ -89,18 +89,32 @@ end removal
 # -reboot (or -rebootafterremoval), if option is specficied, will reboot after removal in -silent mode without confirmation
 
 Param(
-        [Parameter(Mandatory=$False,Position=0)]
-         [Alias("silent", "quiet", "s")]
-         [switch]$Global:isSilent,
-        [Parameter(Mandatory=$False,Position=1)]
-        [Alias("nd", "id", "ignoredefault", "ignoredefaults", "ignoredefaultsuggestions", "nodefaultsuggestions")]
-         [switch]$Global:isIgnoreDefaultSuggestionList,
-        [Parameter(Mandatory=$False,Position=2)]
-        [Alias("reboot", "rebootafterremoval")]
-         [switch]$Global:isRebootAfterRemovalswitch
+
+        [Parameter(Mandatory=$False)]
+            [Alias("silent", "quiet", "s")]
+            [switch]$Global:isSilent,
+
+        [Parameter(Mandatory=$False)]
+            [Alias("nd", "id", "ignoredefault", "ignoredefaults", "ignoredefaultsuggestions", "nodefaultsuggestions")]
+            [switch]$Global:isIgnoreDefaultSuggestionList,
+        
+        [Parameter(Mandatory=$False)]
+            [Alias("reboot", "rebootafterremoval")]
+            [switch]$Global:isRebootAfterRemovalswitch,
+        
+        [Parameter(Mandatory=$False)]
+            [Alias("include", "includefirst")]
+            [array]$Global:bloatwareIncludeFirst,
+        
+        [Parameter(Mandatory=$False)]
+            [Alias("exclude", "filter")]
+            [array]$Global:bloatwareExclude,
+        
+        [Parameter(Mandatory=$False)]
+            [Alias("includelast", "specialcases")]
+            [array]$Global:bloatwareIncludeLast
+
      )
-
-
 
 # Go read BEGIN block to follow program flow then come back here to PROCESS
 PROCESS {
@@ -126,7 +140,7 @@ $scriptName = (Split-Path -Leaf $MyInvocation.MyCommand.Definition)
 
 $Script:dest = "C:\BRU" # no trailing slash, for iss response files created using Set-Content and copying uninstall helper files so we can remove flash drive or removable media the script is run from if needed
 if ( !(Test-path $Script:dest) ) { md -Path $Script:dest | Out-Null }
-$savedPathLocation = Get-Location # if running in console with silent switch save to be restored later
+$savedPathLocation = Get-Location # save to be restored later
 Set-Location $Script:dest # if using removable media like a flash drive, will be safe to remove later
 
 $Script:logfile = [string]$Script:dest+$("\Bloatware-Removal-"+$(get-date -uformat %d-%b-%Y-%H-%M)+".log")
@@ -665,15 +679,7 @@ if ( !($Global:isSilent) ) {
     [int]$Script:numofSelectedProgs = 0
 
 
-    # define what is removed silently
-    # Here is where custom includes/excludes could go and if defaults suggested list is used or not
-
-
-
-
-
-
-    $progslistSelected = $Script:progslisttoremove # using default list for now
+    $progslistSelected = $Script:progslisttoremove
     [int]$Script:numofSelectedProgs = @('0',($progslistSelected | Measure-Object).Count)[($progslistSelected | Measure-Object).Count -gt 0]
 
 
@@ -1542,9 +1548,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
         Write-Output "" | Out-Default
         stopTranscript
-        if ( $Global:isSilent ) { # Restore working directory path if running with -silent switch
-            Set-Location $savedPathLocation
-        }
+        Set-Location $savedPathLocation # Restore working directory path
         Return
     }
 
@@ -1561,9 +1565,7 @@ if ( $button -eq "Cancel" -and !($Global:isSilent) ) {
     [Environment]::Exit(4) # User Canceled 
 }
 
-if ( $Global:isSilent ) { # Restore working directory path if running with -silent switch
-    Set-Location $savedPathLocation
-}
+Set-Location $savedPathLocation # Restore working directory path
 
 
 Return
@@ -1917,10 +1919,24 @@ BEGIN {
 
         # skip special cases, then add them back at the end later
 
-        if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) { # no default suggestions if -nd or -ignoredefaults switch
-            $bloatwarelike = ""
-            $bloatwarenotmatch = ""
-            $specialcasestoremovesinglestring = ""
+        if ( $Global:isSilent ) { # set the command line modifications if running silently using switches
+
+            if ( $Global:isIgnoreDefaultSuggestionList ) { # no default suggestions if -nd or -ignoredefaults switch
+                $bloatwarelike = @()
+                $bloatwarenotmatch = @() 
+                $specialcasestoremove = @()
+            }
+
+            # set include/exclude items to be added after default options (or be the only items to match if previous 'isIgnoreDefaultSuggestionList' option is set)
+            if ( $Global:bloatwareIncludeFirst ) { 
+                $bloatwarelike += [array]$Global:bloatwareIncludeFirst
+            }
+            if ( $Global:bloatwareExclude ) { 
+                $bloatwarenotmatch += [array]$Global:bloatwareExclude
+            }
+            if ( $Global:bloatwareIncludeLast ) { # special cases last
+                $specialcasestoremove += [array]$Global:bloatwareIncludeLast
+            }
         }
 
         $bloatwarenotmatchsinglestring = (($bloatwarenotmatch | % { ".*$([regex]::Escape($_)).*$" }) -join '|') # turn into single string for regex exluding
@@ -1936,7 +1952,7 @@ BEGIN {
         Write-Output "" | Out-Default
         Write-Output "Bloatware suggested for removal (non UWP Win8/Win10+ Apps):`n" | Out-Default
         if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) {
-            Write-Output "Nothing suggested because running with -ignoredefaultsuggestions switch."
+            Write-Output "Nothing suggested by default because running with -ignoredefaultsuggestions switch."
         }
         $Script:progslisttoremove | Out-Default | Format-List
 
