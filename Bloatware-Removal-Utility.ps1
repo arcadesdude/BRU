@@ -2457,7 +2457,9 @@ Write-Host ""
         $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
         $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
         $Script:programsListview.items | % {
-            $_.Checked =  $false
+            if ($_.Checked) {
+                $_.Checked =  $false
+            }
         }
         if ( !($Script:programsListviewWasJustRecreated) ) {
             generateProgListView $Global:progslisttodisplay
