@@ -104,15 +104,15 @@ Param(
         
         [Parameter(Mandatory=$False)]
             [Alias("include", "includefirst")]
-            [array]$Global:bloatwareIncludeFirst,
+            [string[]]$Global:bloatwareIncludeFirst,
         
         [Parameter(Mandatory=$False)]
             [Alias("exclude", "filter")]
-            [array]$Global:bloatwareExclude,
+            [string[]]$Global:bloatwareExclude,
         
         [Parameter(Mandatory=$False)]
             [Alias("includelast", "specialcases")]
-            [array]$Global:bloatwareIncludeLast
+            [string[]]$Global:bloatwareIncludeLast
 
      )
 
@@ -1214,9 +1214,9 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         # http://publib.boulder.ibm.com/tividd/td/framework/GC32-0804-00/en_US/HTML/instgu25.htm
                         # http://helpnet.flexerasoftware.com/installshield19helplib/helplibrary/IHelpSetup_EXECmdLine.htm
                         if ( $prog.UninstallString -match "InstallShield" `
-                            -and ( ($prog.Name -notmatch $Script:specialcasestoremovesinglestring `
+                            -and ( ($prog.Name -notmatch $Global:specialcasestoremovesinglestring `
                                     -and $prog.Name -notmatch "CyberLink\ Media.*Suite" ) `
-                            -or    ($prog.Name -match $Script:specialcasestoremovesinglestring `
+                            -or    ($prog.Name -match $Global:specialcasestoremovesinglestring `
                                     -and $prog.Name -match "CyberLink\ Media.*Suite")) `
                             -and ( $prog.Name -notmatch "HP\ Collaboration\ Keyboard" ) `
                             -and ( $prog.Name -notmatch "HP\ Connection\ Optimizer" ) ) {
@@ -1922,59 +1922,80 @@ BEGIN {
         if ( $Global:isSilent ) { # set the command line modifications if running silently using switches
 
             if ( $Global:isIgnoreDefaultSuggestionList ) { # no default suggestions if -nd or -ignoredefaults switch
-                $bloatwarelike = @()
-                $bloatwarenotmatch = @() 
-                $specialcasestoremove = @()
+                [string[]]$bloatwarelike = ""
+                [string[]]$bloatwarenotmatch = "" 
+                [string[]]$specialcasestoremove = ""
             }
 
             # set include/exclude items to be added after default options (or be the only items to match if previous 'isIgnoreDefaultSuggestionList' option is set)
             if ( $Global:bloatwareIncludeFirst ) { 
-                $bloatwarelike += [array]$Global:bloatwareIncludeFirst
+                $bloatwarelike = [string[]]$Global:bloatwareIncludeFirst + $bloatwarelike
             }
             if ( $Global:bloatwareExclude ) { 
-                $bloatwarenotmatch += [array]$Global:bloatwareExclude
+                $bloatwarenotmatch = $bloatwarenotmatch + [string[]]$Global:bloatwareExclude
             }
             if ( $Global:bloatwareIncludeLast ) { # special cases last
-                $specialcasestoremove += [array]$Global:bloatwareIncludeLast
+                $specialcasestoremove = $specialcasestoremove + [string[]]$Global:bloatwareIncludeLast
             }
         }
 
-        $bloatwarenotmatchsinglestring = (($bloatwarenotmatch | % { ".*$([regex]::Escape($_)).*$" }) -join '|') # turn into single string for regex exluding
-        $Script:specialcasestoremovesinglestring = (($specialcasestoremove | % { ".*$([regex]::Escape($_)).*$" }) -join '|')
-        $bloatwarelikesinglestring = (($bloatwarelike | % { $_ }) -join '|') #$bloatware like is not escaped here
-        $Script:progslisttoremove = @( $Global:proglist | Where { $_.Name -match $bloatwarelikesinglestring } | Where { $_.Name -notmatch ($bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring) } )
+<#
+Write-Host ""
+Write-Output $bloatwarelike | Out-Default
+Write-Host ""
+Write-Output $bloatwarenotmatch | Out-Default
+Write-Host ""
+Write-Output $specialcasestoremove | Out-Default
+Write-Host ""
+#>
+
+
+        $Global:bloatwarenotmatchsinglestring = (($bloatwarenotmatch | % { if ( $_ ) { ".*$([regex]::Escape($_)).*$" } }) -join '|') # turn into single string for regex exluding
+        $Global:specialcasestoremovesinglestring = (($specialcasestoremove | % { if ( $_ ) { ".*$([regex]::Escape($_)).*$" } }) -join '|')
+        $Global:bloatwarelikesinglestring = (($bloatwarelike | % { $_  }) -join '|').TrimStart('|').TrimEnd('|') #$bloatware like is not escaped here
+        $Script:progslisttoremove = @( $Global:proglist | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Global:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Global:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
 
         # Add programs (special cases) that have to be removed after other programs to the end of the list
 
-        $Script:progslisttoremove += @( $specialcasestoremove | % { $currentspecialcase = $_; $Global:proglist -match $_ } | Where { $_.Name -match $currentspecialcase } )
+        $Script:progslisttoremove += @( $specialcasestoremove | % { if ( $_ ) { $currentspecialcase = $_; $Global:proglist -match $_ } } | Where { $_.Name -match $currentspecialcase } | Where { $_.Name -notmatch $Global:bloatwarenotmatchsinglestring } )
         # this only matches each item in specialcasestoremove against the Name in proglist, to exclude when it matches both name and uninstall strings (e.g. 'HP ProtectTools' and the uninstallstring path also contains that text.)
+
+        $ignoreDefaultSuggestionListMsg = "Nothing suggested by default because running with -ignoredefaultsuggestions switch."
 
         Write-Output "" | Out-Default
         Write-Output "Bloatware suggested for removal (non UWP Win8/Win10+ Apps):`n" | Out-Default
         if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) {
-            Write-Output "Nothing suggested by default because running with -ignoredefaultsuggestions switch."
+            Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
         }
         $Script:progslisttoremove | Out-Default | Format-List
+
+
+
+
+
+
+
+
 
         ###############################################################################################################
 
         if ( $Script:winVer -gt 6.1) { # UWP apps only in Win 2012/8+
-            $Script:UWPappsAUtoRemove = @( $Global:UWPappsAU | Where { $_.Name -match $bloatwarelikesinglestring } | Where { $_.Name -notmatch ($bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring) } )
-        #    $Script:UWPappsAUtoRemove += @( $specialcasestoremove | % { $Global:UWPappsAU -match $([regex]::escape($_)); } )
-            $Script:UWPappsProvisionedAppstoRemove = @( $Global:UWPappsProvisionedApps | Where { $_.DisplayName -match $bloatwarelikesinglestring } | Where { $_.DisplayName -notmatch ($bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring) } )
-        #    $Script:UWPappsProvisionedAppstoRemove += @( $specialcasestoremove | % { $Global:UWPappsProvisionedApps -match $([regex]::escape($_)); } )
+            $Script:UWPappsAUtoRemove = @( $Global:UWPappsAU | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Script:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
+        #    $Script:UWPappsAUtoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsAU -match $([regex]::escape($_)); } )
+            $Script:UWPappsProvisionedAppstoRemove = @( $Global:UWPappsProvisionedApps | Where { $Global:bloatwarelikesinglestring } | Where { $_.DisplayName -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Script:specialcasestoremovesinglestring ) { $_.DisplayName -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
+        #    $Script:UWPappsProvisionedAppstoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsProvisionedApps -match $([regex]::escape($_)); } )
 
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "All Users UWP Win8/Win10+ Apps Suggested for Removal:"
             if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) {
-                Write-Output "Nothing suggested because running with -ignoredefaultsuggestions switch."
+                Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
             }
             Write-Output "" | Out-Default
             $Script:UWPappsAUtoRemove | % { $_.PackageFullName | Out-Default }
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "All Users Provisioned UWP Win8/Win10+ Apps Suggested for Removal:"
             if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) {
-                Write-Output "Nothing suggested because running with -ignoredefaultsuggestions switch."
+                Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
             }
             Write-Output "" | Out-Default
             $Script:UWPappsProvisionedAppstoRemove | % { $_.PackageName | Out-Default }
