@@ -119,8 +119,12 @@ Param(
             [switch]$Global:isWin10RecommendedDownloadsOffSilentOption,
 
         [Parameter(Mandatory=$False)]
-            [Alias("win10leavestartmenuadson")]
-            [switch]$Global:isWin10StartMenuAdsSilentOption
+            [Alias("win10leavestartmenuadson", "keepstartads")]
+            [switch]$Global:isWin10StartMenuAdsSilentOption,
+
+        [Parameter(Mandatory=$False)]
+            [Alias("norestorepoint", "skiprestorepoint", "nr")]
+            [switch]$Global:isrequireSystemRestorePointBeforeRemovalSilentOption
 
      )
 
@@ -262,12 +266,11 @@ if ( $Global:isSilent ) { # -silent always implies no confirmation prompts
 
     }
 
-
-
-
-
+    if ( $Global:isrequireSystemRestorePointBeforeRemovalSilentOption ) {
+        $Global:requireSystemRestorePointBeforeRemoval = $false
+        $Global:globalSettings["requireSystemRestorePointBeforeRemoval"] = $Global:requireConfirmationBeforeRemoval
+    }
 }
-
 
 
 Write-Output "`nUsing Options:" | Out-Default
@@ -2114,7 +2117,7 @@ BEGIN {
 #############
 
     function systemRestorePointIfRequired( ) {
-        if ( $Global:requireSystemRestorePointBeforeRemoval -or $Global:isSilent ) {
+        if ( $Global:requireSystemRestorePointBeforeRemoval ) {
             Write-Host "`nProceed with System Restore Point Creation and Continue?`n" | Out-Default
 
             [bool]$isConfirmed = doOptionsRequireConfirmation
