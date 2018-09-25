@@ -124,8 +124,11 @@ Param(
 
         [Parameter(Mandatory=$False)]
             [Alias("norestorepoint", "skiprestorepoint", "nr")]
-            [switch]$Global:isrequireSystemRestorePointBeforeRemovalSilentOption
+            [switch]$Global:isrequireSystemRestorePointBeforeRemovalSilentOption,
 
+        [Parameter(Mandatory=$False)]
+            [Alias("dry", "dr", "dryrun", "detect", "detectonly", "whatif")]
+            [switch]$Global:isDetectOnlyDryRunSilentOption
      )
 
 
@@ -800,7 +803,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
             [bool]$isConfirmed = doOptionsRequireConfirmation
         }
 
-        if ( !($isConfirmed) ) {
+        if ( !($isConfirmed) -or $Global:isDetectOnlyDryRunSilentOption ) {
             Write-Output "You have chosen to not proceed with removal. No changes will be made."
         }
 
@@ -1454,7 +1457,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
     ###############################################################################################################
 
         # Remove non Microsoft Metro/UWP/"Modern" Apps
-        if ( $Script:winVer -gt 6.1 -and $isConfirmed ) { # UWP apps only in Win 2012/8+
+        if ( ($Script:winVer -gt 6.1 -and $isConfirmed) -and !($Global:isDetectOnlyDryRunSilentOption) ) { # UWP apps only in Win 2012/8+
             
             # NOTE: Get-AppxProvisionedPackage uses PackageName and Get-AppxPackage uses PackageFullName
 
@@ -1515,7 +1518,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
     ###############################################################################################################
 
-        if ( $isConfirmed ) {
+        if ( $isConfirmed -and !($Global:isDetectOnlyDryRunSilentOption) ) {
 
             if ( !($Global:isSilent) ) { # literal silence again
             $soundloc = "c:\Windows\Media\tada.wav"
@@ -1574,7 +1577,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         Return
     }
 
-} # end if ( ($button -ne "Cancel") -or ($Global:isSilent) ) # Cancel was clicked or window closed or not confirmed to continue
+} # end if ( ($button -ne "Cancel") -or ($Global:isSilent) ) # Cancel was clicked or window closed or not confirmed to continue or dry run / detect only
 
 if (  !($isConfirmed) ) {
     Write-Output "" | Out-Default
