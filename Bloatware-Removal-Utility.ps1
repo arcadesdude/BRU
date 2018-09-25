@@ -96,25 +96,35 @@ Param(
 
         [Parameter(Mandatory=$False)]
             [Alias("nd", "id", "ignoredefault", "ignoredefaults", "ignoredefaultsuggestions", "nodefaultsuggestions")]
-            [switch]$Global:isIgnoreDefaultSuggestionList,
+            [switch]$Global:isIgnoreDefaultSuggestionListSilentOption,
         
         [Parameter(Mandatory=$False)]
             [Alias("reboot", "rebootafterremoval")]
-            [switch]$Global:isRebootAfterRemovalswitch,
+            [switch]$Global:isRebootAfterRemovalswitchSilentOption,
         
         [Parameter(Mandatory=$False)]
             [Alias("include", "includefirst")]
-            [string[]]$Global:bloatwareIncludeFirst,
+            [string[]]$Global:bloatwareIncludeFirstSilentOption,
         
         [Parameter(Mandatory=$False)]
             [Alias("exclude", "filter")]
-            [string[]]$Global:bloatwareExclude,
+            [string[]]$Global:bloatwareExcludeSilentOption,
         
         [Parameter(Mandatory=$False)]
             [Alias("includelast", "specialcases")]
-            [string[]]$Global:bloatwareIncludeLast
+            [string[]]$Global:bloatwareIncludeLastSilentOption,
+
+        [Parameter(Mandatory=$False)]
+            [Alias("win10leaverecommendedappsdownloadon")]
+            [switch]$Global:isWin10RecommendedDownloadsOffSilentOption,
+
+        [Parameter(Mandatory=$False)]
+            [Alias("win10leavestartmenuadson")]
+            [switch]$Global:isWin10StartMenuAdsSilentOption
 
      )
+
+
 
 # Go read BEGIN block to follow program flow then come back here to PROCESS
 PROCESS {
@@ -236,12 +246,21 @@ if ( $Global:isSilent ) { # Running silently ignores the saved preferences file
 if ( $Global:isSilent ) { # -silent always implies no confirmation prompts
     $Global:requireConfirmationBeforeRemoval = $false
     $Global:globalSettings["requireConfirmationBeforeRemoval"] = $Global:requireConfirmationBeforeRemoval
-    if ( $Global:isRebootAfterRemovalswitch ) {
+    if ( $Global:isRebootAfterRemovalswitchSilentOption ) {
         $Global:rebootAfterRemoval = $true
         $Global:globalSettings["rebootAfterRemoval"] = $Global:rebootAfterRemoval
     }
 
+    if ( $Global:isWin10RecommendedDownloadsOffSilentOption ) {
+        $Global:optionsWin10RecommendedDownloadsOff = $false
+        $Global:globalSettings["optionsWin10RecommendedDownloadsOff"] = $Global:optionsWin10RecommendedDownloadsOff     
+    }
 
+    if ( $Global:isWin10StartMenuAdsSilentOption ) {
+        $Global:optionsWin10StartMenuAds = $false
+        $Global:globalSettings["optionsWin10StartMenuAds"] = $Global:optionsWin10StartMenuAds
+
+    }
 
 
 
@@ -1921,21 +1940,21 @@ BEGIN {
 
         if ( $Global:isSilent ) { # set the command line modifications if running silently using switches
 
-            if ( $Global:isIgnoreDefaultSuggestionList ) { # no default suggestions if -nd or -ignoredefaults switch
+            if ( $Global:isIgnoreDefaultSuggestionListSilentOption ) { # no default suggestions if -nd or -ignoredefaults switch
                 [string[]]$bloatwarelike = ""
                 [string[]]$bloatwarenotmatch = "" 
                 [string[]]$specialcasestoremove = ""
             }
 
-            # set include/exclude items to be added after default options (or be the only items to match if previous 'isIgnoreDefaultSuggestionList' option is set)
-            if ( $Global:bloatwareIncludeFirst ) { 
-                $bloatwarelike = [string[]]$Global:bloatwareIncludeFirst + $bloatwarelike
+            # set include/exclude items to be added after default options (or be the only items to match if previous 'isIgnoreDefaultSuggestionListSilentOption' option is set)
+            if ( $Global:bloatwareIncludeFirstSilentOption ) { 
+                $bloatwarelike = [string[]]$Global:bloatwareIncludeFirstSilentOption + $bloatwarelike
             }
-            if ( $Global:bloatwareExclude ) { 
-                $bloatwarenotmatch = $bloatwarenotmatch + [string[]]$Global:bloatwareExclude
+            if ( $Global:bloatwareExcludeSilentOption ) { 
+                $bloatwarenotmatch = $bloatwarenotmatch + [string[]]$Global:bloatwareExcludeSilentOption
             }
-            if ( $Global:bloatwareIncludeLast ) { # special cases last
-                $specialcasestoremove = $specialcasestoremove + [string[]]$Global:bloatwareIncludeLast
+            if ( $Global:bloatwareIncludeLastSilentOption ) { # special cases last
+                $specialcasestoremove = $specialcasestoremove + [string[]]$Global:bloatwareIncludeLastSilentOption
             }
         }
 
@@ -1953,7 +1972,7 @@ BEGIN {
 
         Write-Output "" | Out-Default
         Write-Output "Bloatware suggested for removal (non UWP Win8/Win10+ Apps):`n" | Out-Default
-        if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) {
+        if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionListSilentOption ) {
             Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
         }
         $Script:progslisttoremove | Out-Default | Format-List
@@ -1968,14 +1987,14 @@ BEGIN {
 
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "All Users UWP Win8/Win10+ Apps Suggested for Removal:"
-            if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) {
+            if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionListSilentOption ) {
                 Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
             }
             Write-Output "" | Out-Default
             $Script:UWPappsAUtoRemove | % { $_.PackageFullName | Out-Default }
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "All Users Provisioned UWP Win8/Win10+ Apps Suggested for Removal:"
-            if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionList ) {
+            if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionListSilentOption ) {
                 Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
             }
             Write-Output "" | Out-Default
@@ -2252,7 +2271,7 @@ BEGIN {
     function doWindows10Options( ) {
         if ( $Script:winVer -ge 10 ) {
             if ( $Global:optionsWin10RecommendedDownloadsOff ) {
-                Write-Host "Confirm setting Win10 UWP `"recommended`" apps (ads) auto-download to be off." | Out-Default
+                Write-Host "`nConfirm setting Win10 UWP `"recommended`" apps (ads) auto-download to be off." | Out-Default
             }
 
             if ( $Global:optionsWin10StartMenuAds ) {
