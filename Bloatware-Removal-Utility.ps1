@@ -679,7 +679,7 @@ if ( !($Global:isSilent) ) {
     [int]$Script:numofSelectedProgs = 0
 
 
-    $progslistSelected = $Script:progslisttoremove
+    $progslistSelected = $Script:progslisttoremove + $Script:UWPappsAUtoRemove + $Script:UWPappsProvisionedAppstoRemove
     [int]$Script:numofSelectedProgs = @('0',($progslistSelected | Measure-Object).Count)[($progslistSelected | Measure-Object).Count -gt 0]
 
 
@@ -1939,17 +1939,6 @@ BEGIN {
             }
         }
 
-<#
-Write-Host ""
-Write-Output $bloatwarelike | Out-Default
-Write-Host ""
-Write-Output $bloatwarenotmatch | Out-Default
-Write-Host ""
-Write-Output $specialcasestoremove | Out-Default
-Write-Host ""
-#>
-
-
         $Global:bloatwarenotmatchsinglestring = (($bloatwarenotmatch | % { if ( $_ ) { ".*$([regex]::Escape($_)).*$" } }) -join '|') # turn into single string for regex exluding
         $Global:specialcasestoremovesinglestring = (($specialcasestoremove | % { if ( $_ ) { ".*$([regex]::Escape($_)).*$" } }) -join '|')
         $Global:bloatwarelikesinglestring = (($bloatwarelike | % { $_  }) -join '|').TrimStart('|').TrimEnd('|') #$bloatware like is not escaped here
@@ -1968,14 +1957,6 @@ Write-Host ""
             Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
         }
         $Script:progslisttoremove | Out-Default | Format-List
-
-
-
-
-
-
-
-
 
         ###############################################################################################################
 
