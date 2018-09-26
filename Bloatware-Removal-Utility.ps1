@@ -553,7 +553,7 @@ if ( !($Global:isSilent) ) {
     $helpAboutMenu.Text = "&About"
     $helpAboutMenu.TextAlign = "MiddleLeft"
     function showHelpAboutMenu($Sender,$e){
-        [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2018.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!","About Bloatware Removal Utility (BRU)")
+        [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2018.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!`n`nhttp://github.com/arcadesdude/BRU","About Bloatware Removal Utility (BRU)")
     }
     $helpMenu.DropDownItems.Add($helpAboutMenu) | Out-Null
     $helpAboutMenu.Add_Click( { showHelpAboutMenu $helpAboutMenu $EventArgs} )
