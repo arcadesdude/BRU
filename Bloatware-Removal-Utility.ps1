@@ -816,7 +816,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
         if ( !($isConfirmed) -or $Global:isDetectOnlyDryRunSilentOption ) {
             if ( $Global:isDetectOnlyDryRunSilentOption ) {
-                Write-Verbose -Verbose "Dry Run / Detect Only / WhatIf Mode"
+                Write-Verbose -Verbose "***DryRun DetectOnly WhatIf Mode***"
             }
             Write-Output "You have chosen to not proceed with removal. No changes will be made."
         }
