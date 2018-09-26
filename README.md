@@ -92,6 +92,8 @@ http://us.mcafee.com/apps/supporttools/mcpr/mcpr.asp
 
 # Usage
 
+For silent / command line usage see the next section. Below is for GUI usage (default).
+
 Right Click and run as administrator on the BAT file (not the PS1) file.
 
 ![Run as Administrator](run-as-admin.PNG?raw=true "Run As Administrator")
@@ -113,6 +115,52 @@ The setting recommended UWP apps auto download off option is supposed to stop UW
 The other Windows 10 specific option 'set default start menu layout for new users' will not affect any existing accounts or current users. If a new user profile is created it will though. What this does is once the bloatware UWP apps are removed, they're also unpinned from the start menu so the new user won't see the uninstalled UWP bloatware applicaitons. This doesn't always seems to work and may give an error about the tiledatabase unless windows is updated first. So for setting up the computer, create your setup admin account first, update windows completely, then run this script to remove the bloatware and set the default start menu layout, then create the new user account which should start off without the default tiles pinned to the start menu.
 
 ![BRU-Script-Running](BRU-2.PNG?raw=true "BRU Script Running")
+
+# Silent / Command line usage
+
+The following command line options are supported.
+
+-silent (or -quiet or -s)
+  Silent mode. Without this switch the GUI will run and manual user input will be required.
+
+-nd (or -id or -ignoredefault or -ignoredefaults or -ignoredefaultsuggestions or -nodefaultsuggestions)
+  This will not reference the built in suggestions lists so you'll need to use this with -include, -exclude and/or -includelast (-specialcases)
+  
+-reboot -rebootafterremoval
+  Reboots after running silently. You can check the log (see next section) for details after script runs.
+
+-include -includefirst
+  This will allow you to choose what you want to include. This comes after the default list if that is used or, if you want to not use the built in suggestions be sure to use the -nd switch (or other above aliases) to prevent the default detection list of including what you don't want. You would include using *Regular Expressions* (unescaped and case-INsensitive) such as the following:
+  
+  -include "PROGRAM\ NAME","Something-else","HP\ .*"
+
+-exclude -filter
+  This will allow you to exclude (not detect) items you don't want to match. This matches text in Regular Expressions but it is escaped in the program so you would enter examples such as:
+  
+  -exclude "keyboard","driver"
+  
+ What you put into each "string" above will turn into a single Regex escaped string like ".*keyboard|driver.*"
+
+-includelast -specialcases
+  This is for programs you want uninstalled AFTER everything else. Useful for stuff that needs to come after other stuff to be removed properly (*cough* HP Client Security Manager *cough*). This matches text in Regular Expressions but it is escaped in the program so you would enter examples such as:
+  
+  -includelast "HP Client Security Manager","HP Support Assistant"
+  
+ What you put into each "string" above will turn into a single Regex escaped string like ".*HP\ Client\ Security\ Manager|HP\ Support\ Assistant.*"
+
+-win10leaverecommendedappsdownloadon
+  This will keep the default Windows 10 option for Windows to download those random, recommended game apps like Candy Crush and such. If you don't include this option this script will set the registry keys to stop that unwanted behavior (default).
+
+-win10leavestartmenuadson -keepstartads
+  This option will keep the Win10 ContentDeliveryManager Ads that appear in the start menu. Not having this option will remove the ads and export the default option so new default accounts won't see them. It doesn't affect existing Windows accounts.
+  
+-norestorepoint -skiprestorepoint -nr
+  This skips the Windows Restore Point creation attempt which is on by default.
+
+-dry- dr- dryrun -detect -detectonly -whatif
+  Dry Run / Detect Only / WhatIf mode will not remove anything but show you what your -include and -exclude (and -specialcases) filters will target if you're working on trying to target just specific software to be removed.
+  
+If you find a setup that works for you you can modify the batch script to specify the options. The current batch script will also run the streams.exe program if you've included it in the uninstall helpers folder to remove the download zone information from the PS1/VBS/BAT/EXE files so Windows SmartScreen doesn't stop the script from running when launching.
 
 
 # Log
