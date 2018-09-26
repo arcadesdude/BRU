@@ -136,23 +136,23 @@ The following command line options are supported.
 
   This will allow you to choose what you want to include. This comes after the default list if that is used or, if you want to not use the built in suggestions be sure to use the -nd switch (or other above aliases) to prevent the default detection list of including what you don't want. You would include using *Regular Expressions* (unescaped and case-INsensitive) such as the following:
   
-  -include "PROGRAM\ NAME","Something-else","HP\ .*"
+  -include `"PROGRAM\ NAME","Something-else","HP\ .*"`
 
 -exclude -filter
 
   This will allow you to exclude (not detect) items you don't want to match. This matches text in Regular Expressions but it is escaped in the program so you would enter examples such as:
   
-  -exclude "keyboard","driver"
+  -exclude `"keyboard","driver"`
   
- What you put into each "string" above will turn into a single Regex escaped string like ".*keyboard|driver.*"
+ What you put into each "string" above will turn into a single Regex escaped string like `".*keyboard|driver.*"`
 
 -includelast -specialcases
 
-  This is for programs you want uninstalled AFTER everything else. Useful for stuff that needs to come after other stuff to be removed properly (*cough* HP Client Security Manager *cough*). This matches text in Regular Expressions but it is escaped in the program so you would enter examples such as:
+  This is for programs you want uninstalled AFTER everything else. Useful for stuff that needs to come after other stuff to be removed properly (`*cough*` HP Client Security Manager `*cough*`). This matches text in Regular Expressions but it is escaped in the program so you would enter examples such as:
   
-  -includelast "HP Client Security Manager","HP Support Assistant"
+  -includelast `"HP Client Security Manager","HP Support Assistant"`
   
- What you put into each "string" above will turn into a single Regex escaped string like ".*HP\ Client\ Security\ Manager|HP\ Support\ Assistant.*"
+ What you put into each "string" above will turn into a single Regex escaped string like `".*HP\ Client\ Security\ Manager|HP\ Support\ Assistant.*"`
 
 -win10leaverecommendedappsdownloadon
 
