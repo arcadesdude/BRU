@@ -701,13 +701,14 @@ if ( !($Global:isSilent) ) {
 
     refreshProgramsList # get default $Script:progslisttoremove
 
-    [int]$Script:numofSelectedProgs = 0
-
-
-    $progslistSelected = $Script:progslisttoremove + $Script:UWPappsAUtoRemove + $Script:UWPappsProvisionedAppstoRemove
+    $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
+    
+    $progslistSelected = $Script:progslisttoremove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
+    $Global:UWPappsAUtoRemove = $Global:UWPappsAUtoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
+    $Global:UWPappsProvisionedAppstoRemove = $Global:UWPappsProvisionedAppstoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
+    $progslistSelected += $Global:UWPappsAUtoRemove
+    $progslistSelected += $Global:UWPappsProvisionedAppstoRemove
     [int]$Script:numofSelectedProgs = @('0',($progslistSelected | Measure-Object).Count)[($progslistSelected | Measure-Object).Count -gt 0]
-
-
 
 
 } # end if ( !($Global:isSilent) )
@@ -767,7 +768,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         Write-Verbose -Verbose "Selected and ordered programs to be removed:"
         Write-Output $removeOrderedSelectedList | Out-Default
 
-        if ( $Script:winVer -gt 6.1) {
+        if ( $Script:winVer -gt 6.1 ) {
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "Selected and ordered UWPappsAU (Installed Win8/10+ apps) to be removed:"
             Write-Output $removeOrderedSelectedUWPappsAU | Out-Default
@@ -786,7 +787,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         $Script:progslisttoremove = $removeOrderedSelectedList 
 
 
-        if ( $Script:winVer -gt 6.1) {
+        if ( $Script:winVer -gt 6.1 ) {
             #$Script:UWPappsAUtoRemoveOrginal = $Script:UWPappsAUtoRemove
             #$Script:UWPappsProvisionedAppstoRemoveOrginal = $Script:UWPappsProvisionedAppstoRemove
             $Script:UWPappsAUtoRemove = $removeOrderedSelectedUWPappsAU
@@ -875,7 +876,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
 ################# Main Uninstallation Loop ########################################################################
 
-            ForEach( $prog in $Script:progslisttoremove) { 
+            ForEach( $prog in $Script:progslisttoremove ) { 
 
                 $functionAfterUninstallerStarted = $null # no additional cleanup by default unless defined for each specific program
                 $waitForExitAfterUninstallerStarted = 1 # default is to wait for uninstaller to exit before continuing unless modified below, useful if needed to start the uninstaller but not wait on it to exit, such as when using SendKeys to to uninstaller
@@ -1964,6 +1965,8 @@ BEGIN {
             }
         }
 
+        ############## Core regular expression matching magic regular programs ##############
+
         $Global:bloatwarenotmatchsinglestring = (($bloatwarenotmatch | % { if ( $_ ) { ".*$([regex]::Escape($_)).*$" } }) -join '|') # turn into single string for regex exluding
         $Global:specialcasestoremovesinglestring = (($specialcasestoremove | % { if ( $_ ) { ".*$([regex]::Escape($_)).*$" } }) -join '|')
         $Global:bloatwarelikesinglestring = (($bloatwarelike | % { $_  }) -join '|').TrimStart('|').TrimEnd('|') #$bloatware like is not escaped here
@@ -1986,6 +1989,9 @@ BEGIN {
         ###############################################################################################################
 
         if ( $Script:winVer -gt 6.1) { # UWP apps only in Win 2012/8+
+
+            ############## Core regular expression matching magic UWP / Windows Store Programs ##############
+
             $Script:UWPappsAUtoRemove = @( $Global:UWPappsAU | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Script:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
         #    $Script:UWPappsAUtoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsAU -match $([regex]::escape($_)); } )
             $Script:UWPappsProvisionedAppstoRemove = @( $Global:UWPappsProvisionedApps | Where { $Global:bloatwarelikesinglestring } | Where { $_.DisplayName -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Script:specialcasestoremovesinglestring ) { $_.DisplayName -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
@@ -2014,23 +2020,24 @@ BEGIN {
         #$Global:UWPappsAU exists
         #$Global:UWPappsProvisionedApps exists
 
+
+        # following 3 variables are modified by the GUI selection list
+        #$Script:progslisttoremove exists
+        #$Script:UWPappsAUtoRemove exists
+        #$Script:UWPappsProvisionedAppstoRemove exists
+
+        $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
+        $Global:progslisttodisplay = $Global:proglist | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
+        #$Global:orignalprogslisttodisplay = $Global:progslisttodisplay
+        # Add in the UWP Win8/10+ apps to the list
+        $Global:UWPappsAUlisttodisplay = $Global:UWPappsAU | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
+        $Global:UWPappsProvisionedAppslisttodisplay = $Global:UWPappsProvisionedApps | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
+        $Global:progslisttodisplay += $Global:UWPappsAUlisttodisplay
+        $Global:progslisttodisplay += $Global:UWPappsProvisionedAppslisttodisplay
+
+        [int]$Global:numofprogs = @('0',($Global:progslisttodisplay | Measure-Object).Count)[($Global:progslisttodisplay | Measure-Object).Count -gt 0]
+
         if ( !($Global:isSilent) ) {
-
-            # following 3 variables are modified by the GUI selection list
-            #$Script:progslisttoremove exists
-            #$Script:UWPappsAUtoRemove exists
-            #$Script:UWPappsProvisionedAppstoRemove exists
-
-            $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
-            $Global:progslisttodisplay = $Global:proglist | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
-            #$Global:orignalprogslisttodisplay = $Global:progslisttodisplay
-            # Add in the UWP Win8/10+ apps to the list
-            $Global:UWPappsAUlisttodisplay = $Global:UWPappsAU | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
-            $Global:UWPappsProvisionedAppslisttodisplay = $Global:UWPappsProvisionedApps | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
-            $Global:progslisttodisplay += $Global:UWPappsAUlisttodisplay
-            $Global:progslisttodisplay += $Global:UWPappsProvisionedAppslisttodisplay
-
-            [int]$Global:numofprogs = @('0',($Global:progslisttodisplay | Measure-Object).Count)[($Global:progslisttodisplay | Measure-Object).Count -gt 0]
 
             # the Where { $_ }  in the following statement is useful if the Get-AppxPackage or Get-AppxProvisionedPackage services were off and the result returned to them was a bunch of boolean false statements
             $Global:progslisttoshowchecked = @($Script:progslisttoremove | Where { $_ } | Select-Object $proglistviewColumnsArray -ExcludeProperty DisplayName) + @($Script:UWPappsAUtoRemove | Where { $_ } | Select-Object $proglistviewColumnsArray -ExcludeProperty DisplayName) + @($Script:UWPappsProvisionedAppstoRemove | Where { $_ } | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName) | Sort Name
@@ -2051,10 +2058,6 @@ BEGIN {
 
         } else { # if running silently
 
-            $Global:progslisttodisplay = $Global:proglist | Sort-Object Name
-            $Global:progslisttodisplay += $Global:UWPappsAU | Sort-Object Name
-            $Global:progslisttodisplay += $Global:UWPappsProvisionedApps | Sort-Object Name
-            [int]$Global:numofprogs = @('0',($Global:progslisttodisplay | Measure-Object).Count)[($Global:progslisttodisplay | Measure-Object).Count -gt 0]
             Write-Output "" | Out-Default
             Write-Output "Total number of programs: $($Global:numofprogs)"
 
