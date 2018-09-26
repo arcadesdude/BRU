@@ -704,10 +704,16 @@ if ( !($Global:isSilent) ) {
     $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
     
     $progslistSelected = $Script:progslisttoremove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
-    $Global:UWPappsAUtoRemove = $Global:UWPappsAUtoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
-    $Global:UWPappsProvisionedAppstoRemove = $Global:UWPappsProvisionedAppstoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
-    $progslistSelected += $Global:UWPappsAUtoRemove
-    $progslistSelected += $Global:UWPappsProvisionedAppstoRemove
+    
+    if ( $Script:winVer -gt 6.1 ) {
+    
+        $Global:UWPappsAUtoRemove = $Global:UWPappsAUtoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
+        $Global:UWPappsProvisionedAppstoRemove = $Global:UWPappsProvisionedAppstoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
+        $progslistSelected += $Global:UWPappsAUtoRemove
+        $progslistSelected += $Global:UWPappsProvisionedAppstoRemove
+    
+    }
+
     [int]$Script:numofSelectedProgs = @('0',($progslistSelected | Measure-Object).Count)[($progslistSelected | Measure-Object).Count -gt 0]
 
 
@@ -797,18 +803,25 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         Write-Output "" | Out-Default
         Write-Output "Up to this point no changes have been made. Below this point is where software starts being removed.`n" | Out-Default
 
-        $isConfirmed = systemRestorePointIfRequired
-       
-        if ( $Global:requireConfirmationBeforeRemoval -and $isConfirmed ) { # options chosen, no system restore point but wants confirmation
-            Write-Host "`nProceed with Bloatware Removal?`n" | Out-Default
-            [bool]$isConfirmed = doOptionsRequireConfirmation
+        if ( !($Global:isDetectOnlyDryRunSilentOption) ) {
+
+            $isConfirmed = systemRestorePointIfRequired
+           
+            if ( $Global:requireConfirmationBeforeRemoval -and $isConfirmed ) { # options chosen, no system restore point but wants confirmation
+                Write-Host "`nProceed with Bloatware Removal?`n" | Out-Default
+                [bool]$isConfirmed = doOptionsRequireConfirmation
+            }
+        
         }
 
         if ( !($isConfirmed) -or $Global:isDetectOnlyDryRunSilentOption ) {
+            if ( $Global:isDetectOnlyDryRunSilentOption ) {
+                Write-Verbose -Verbose "Dry Run / Detect Only / WhatIf Mode"
+            }
             Write-Output "You have chosen to not proceed with removal. No changes will be made."
         }
 
-        if ( $Script:progslisttoremove -and $isConfirmed ) {
+        if ( ($Script:progslisttoremove -and $isConfirmed) -and !($Global:isDetectOnlyDryRunSilentOption) ) {
             Write-Output "" | Out-Default
             Write-Output "Copying Helper Files to $($Script:dest)\ ..." | Out-Default
             Write-Output "If running from removable media like a flash drive`nPlease do not remove it yet." | Out-Default
@@ -1453,7 +1466,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
             Remove-Item "$Script:dest\WASP.dll" -Force -Verbose -ErrorAction SilentlyContinue
             $ErrorActionPreference = "Continue"
 
-        } # end if ( $Script:progslisttoremove )
+        } # end if ( ($Script:progslisttoremove -and $isConfirmed) -and !($Global:isDetectOnlyDryRunSilentOption) )
 
     ###############################################################################################################
 
@@ -1564,7 +1577,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         if ( $Script:winVer -ge 10 ) {
             $isConfirmed = systemRestorePointIfRequired
             if ( !($isConfirmed) ) {
-            Write-Output "You have chosen to not proceed with removal or change settings. No changes will be made."
+                Write-Output "You have chosen to not proceed with removal or change settings. No changes will be made."
             } else {
                 doWindows10Options # even if no programs to remove or selected, apply selected Win10 tweaks
             }
@@ -2017,23 +2030,26 @@ BEGIN {
 
         # At this point:
         #$Global:proglist exists
-        #$Global:UWPappsAU exists
-        #$Global:UWPappsProvisionedApps exists
+        #$Global:UWPappsAU exists if ( $Script:winVer -gt 6.1 )
+        #$Global:UWPappsProvisionedApps exists if ( $Script:winVer -gt 6.1 )
 
 
         # following 3 variables are modified by the GUI selection list
         #$Script:progslisttoremove exists
-        #$Script:UWPappsAUtoRemove exists
-        #$Script:UWPappsProvisionedAppstoRemove exists
+        #$Script:UWPappsAUtoRemove exists if ( $Script:winVer -gt 6.1 )
+        #$Script:UWPappsProvisionedAppstoRemove exists if ( $Script:winVer -gt 6.1 )
 
         $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
         $Global:progslisttodisplay = $Global:proglist | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
         #$Global:orignalprogslisttodisplay = $Global:progslisttodisplay
         # Add in the UWP Win8/10+ apps to the list
-        $Global:UWPappsAUlisttodisplay = $Global:UWPappsAU | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
-        $Global:UWPappsProvisionedAppslisttodisplay = $Global:UWPappsProvisionedApps | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
-        $Global:progslisttodisplay += $Global:UWPappsAUlisttodisplay
-        $Global:progslisttodisplay += $Global:UWPappsProvisionedAppslisttodisplay
+        
+        if ( $Script:winVer -gt 6.1 ) {
+            $Global:UWPappsAUlisttodisplay = $Global:UWPappsAU | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
+            $Global:UWPappsProvisionedAppslisttodisplay = $Global:UWPappsProvisionedApps | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
+            $Global:progslisttodisplay += $Global:UWPappsAUlisttodisplay
+            $Global:progslisttodisplay += $Global:UWPappsProvisionedAppslisttodisplay
+        }
 
         [int]$Global:numofprogs = @('0',($Global:progslisttodisplay | Measure-Object).Count)[($Global:progslisttodisplay | Measure-Object).Count -gt 0]
 
