@@ -709,8 +709,8 @@ if ( !($Global:isSilent) ) {
     
         $Global:UWPappsAUtoRemove = $Global:UWPappsAUtoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
         $Global:UWPappsProvisionedAppstoRemove = $Global:UWPappsProvisionedAppstoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
-        $progslistSelected += $Global:UWPappsAUtoRemove
-        $progslistSelected += $Global:UWPappsProvisionedAppstoRemove
+        $progslistSelected += @( $Global:UWPappsAUtoRemove )
+        $progslistSelected += @( $Global:UWPappsProvisionedAppstoRemove )
     
     }
 
@@ -794,10 +794,10 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
 
         if ( $Script:winVer -gt 6.1 ) {
-            #$Script:UWPappsAUtoRemoveOrginal = $Script:UWPappsAUtoRemove
-            #$Script:UWPappsProvisionedAppstoRemoveOrginal = $Script:UWPappsProvisionedAppstoRemove
-            $Script:UWPappsAUtoRemove = $removeOrderedSelectedUWPappsAU
-            $Script:UWPappsProvisionedAppstoRemove = $removeOrderedSelectedUWPappsProvisioned
+            #$Global:UWPappsAUtoRemoveOrginal = $Global:UWPappsAUtoRemove
+            #$Global:UWPappsProvisionedAppstoRemoveOrginal = $Global:UWPappsProvisionedAppstoRemove
+            $Global:UWPappsAUtoRemove = $removeOrderedSelectedUWPappsAU
+            $Global:UWPappsProvisionedAppstoRemove = $removeOrderedSelectedUWPappsProvisioned
         }
 
         Write-Output "" | Out-Default
@@ -1475,7 +1475,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
             
             # NOTE: Get-AppxProvisionedPackage uses PackageName and Get-AppxPackage uses PackageFullName
 
-            if ( $Script:UWPappsAUtoRemove ) {
+            if ( $Global:UWPappsAUtoRemove ) {
 
                 Write-Output "" | Out-Default
                 Write-Verbose -Verbose "Removing Matching All Users UWP Apps..."
@@ -1483,7 +1483,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                 
                 # Unpin from start code adapted from: https://superuser.com/questions/1191143/how-to-unpin-windows-10-start-menu-ads-with-powershell
 
-                $Script:UWPappsAUtoRemove | % {
+                $Global:UWPappsAUtoRemove | % {
                     Write-Output "`nRemoving $($_.Name)`nPackageFullName: $($_.PackageFullName)" | Out-Default
                     Remove-AppxPackage $_.PackageFullName
                     Start-Sleep -Seconds 4
@@ -1497,18 +1497,18 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     } catch {
                         Write-Warning "Unable to Unpin $unpinName from Start Menu." | Out-Default
                     }
-                } # end $Script:UWPappsAUtoRemove | %
+                } # end $Global:UWPappsAUtoRemove | %
 
-            } # end if ( $Script:UWPappsAUtoRemove ) 
+            } # end if ( $Global:UWPappsAUtoRemove ) 
 
             
-            if ( $Script:UWPappsProvisionedAppstoRemove ) {
+            if ( $Global:UWPappsProvisionedAppstoRemove ) {
 
                 Write-Output "" | Out-Default
                 Write-Verbose -Verbose "Removing Matching All Users `'Provisioned`' UWP Apps..."
                 Write-Output "" | Out-Default
 
-                $Script:UWPappsProvisionedAppstoRemove | % {
+                $Global:UWPappsProvisionedAppstoRemove | % {
                     Write-Output "`nRemoving $($_.DisplayName)`nPackageName: $($_.PackageName)" | Out-Default
                     Remove-AppxProvisionedPackage -PackageName $_.PackageName -Online | Out-Null
                     Start-Sleep -Seconds 4
@@ -1522,9 +1522,9 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     } catch {
                         Write-Warning "Unable to Unpin $unpinName from Start Menu." | Out-Default
                     }
-                } # end $Script:UWPappsProvisionedAppstoRemove | % 
+                } # end $Global:UWPappsProvisionedAppstoRemove | % 
 
-            } # end if ( $Script:UWPappsProvisionedAppstoRemove ) 
+            } # end if ( $Global:UWPappsProvisionedAppstoRemove ) 
 
             doWindows10Options # if Win10+ and Option(s) enabled
 
@@ -1563,7 +1563,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
     } else { # end if ( $progslistSelected -ne $null )
  
-    #    if ( !($Script:progslisttoremove) -and !($Script:UWPappsAUtoRemove) -and !($Script:UWPappsProvisionedAppstoRemove) ) {
+    #    if ( !($Script:progslisttoremove) -and !($Global:UWPappsAUtoRemove) -and !($Global:UWPappsProvisionedAppstoRemove) ) {
             Write-Output "" | Out-Default
             $nonefoundmessage = "No Bloatware was selected"
             if ( $Global:isSilent ) {
@@ -1571,7 +1571,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
             }
             $nonefoundmessage += "."
             Write-Output $nonefoundmessage | Out-Default
-    #   } # end of if ( ($Script:progslisttoremove) -or ($Script:UWPappsAUtoRemove) -or ($Script:UWPappsProvisionedAppstoRemove) )
+    #   } # end of if ( ($Script:progslisttoremove) -or ($Global:UWPappsAUtoRemove) -or ($Global:UWPappsProvisionedAppstoRemove) )
 
         $isConfirmed = $false
         if ( $Script:winVer -ge 10 ) {
@@ -2005,10 +2005,10 @@ BEGIN {
 
             ############## Core regular expression matching magic UWP / Windows Store Programs ##############
 
-            $Script:UWPappsAUtoRemove = @( $Global:UWPappsAU | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Script:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
-        #    $Script:UWPappsAUtoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsAU -match $([regex]::escape($_)); } )
-            $Script:UWPappsProvisionedAppstoRemove = @( $Global:UWPappsProvisionedApps | Where { $Global:bloatwarelikesinglestring } | Where { $_.DisplayName -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Script:specialcasestoremovesinglestring ) { $_.DisplayName -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
-        #    $Script:UWPappsProvisionedAppstoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsProvisionedApps -match $([regex]::escape($_)); } )
+            $Global:UWPappsAUtoRemove = @( $Global:UWPappsAU | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Script:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
+        #    $Global:UWPappsAUtoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsAU -match $([regex]::escape($_)); } )
+            $Global:UWPappsProvisionedAppstoRemove = @( $Global:UWPappsProvisionedApps | Where { $Global:bloatwarelikesinglestring } | Where { $_.DisplayName -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Script:specialcasestoremovesinglestring ) { $_.DisplayName -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
+        #    $Global:UWPappsProvisionedAppstoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsProvisionedApps -match $([regex]::escape($_)); } )
 
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "All Users UWP Win8/Win10+ Apps Suggested for Removal:"
@@ -2016,14 +2016,14 @@ BEGIN {
                 Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
             }
             Write-Output "" | Out-Default
-            $Script:UWPappsAUtoRemove | % { $_.PackageFullName | Out-Default }
+            $Global:UWPappsAUtoRemove | % { $_.PackageFullName | Out-Default }
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "All Users Provisioned UWP Win8/Win10+ Apps Suggested for Removal:"
             if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionListSilentOption ) {
                 Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
             }
             Write-Output "" | Out-Default
-            $Script:UWPappsProvisionedAppstoRemove | % { $_.PackageName | Out-Default }
+            $Global:UWPappsProvisionedAppstoRemove | % { $_.PackageName | Out-Default }
         }
 
         ###############################################################################################################
@@ -2036,8 +2036,8 @@ BEGIN {
 
         # following 3 variables are modified by the GUI selection list
         #$Script:progslisttoremove exists
-        #$Script:UWPappsAUtoRemove exists if ( $Script:winVer -gt 6.1 )
-        #$Script:UWPappsProvisionedAppstoRemove exists if ( $Script:winVer -gt 6.1 )
+        #$Global:UWPappsAUtoRemove exists if ( $Script:winVer -gt 6.1 )
+        #$Global:UWPappsProvisionedAppstoRemove exists if ( $Script:winVer -gt 6.1 )
 
         $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
         $Global:progslisttodisplay = $Global:proglist | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
@@ -2056,7 +2056,7 @@ BEGIN {
         if ( !($Global:isSilent) ) {
 
             # the Where { $_ }  in the following statement is useful if the Get-AppxPackage or Get-AppxProvisionedPackage services were off and the result returned to them was a bunch of boolean false statements
-            $Global:progslisttoshowchecked = @($Script:progslisttoremove | Where { $_ } | Select-Object $proglistviewColumnsArray -ExcludeProperty DisplayName) + @($Script:UWPappsAUtoRemove | Where { $_ } | Select-Object $proglistviewColumnsArray -ExcludeProperty DisplayName) + @($Script:UWPappsProvisionedAppstoRemove | Where { $_ } | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName) | Sort Name
+            $Global:progslisttoshowchecked = @($Script:progslisttoremove | Where { $_ } | Select-Object $proglistviewColumnsArray -ExcludeProperty DisplayName) + @($Global:UWPappsAUtoRemove | Where { $_ } | Select-Object $proglistviewColumnsArray -ExcludeProperty DisplayName) + @($Global:UWPappsProvisionedAppstoRemove | Where { $_ } | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName) | Sort Name
 
             generateProgListView $Global:progslisttodisplay
             if ( $Script:showSuggestedtoRemove ) {
