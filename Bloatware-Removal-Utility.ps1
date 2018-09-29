@@ -1914,12 +1914,6 @@ BEGIN {
         "HoloItemPlayerApp",
         "HoloShell",
         "Messaging",
-        "Microsoft.Office.Desktop.Access",              # MS Office UWP apps to exclude
-        "Removing Microsoft.Office.Desktop.Outlook",    # These are removed by "Microsoft\.Office\.Desktop_"
-        "Removing Microsoft.Office.Desktop.Excel",      # which matches in $bloatwarelike
-        "Microsoft.Office.Desktop.Publisher",
-        "Microsoft.Office.Desktop.PowerPoint",
-        "Microsoft.Office.Desktop.Word",
         "MicrosoftSolitaireCollection",
         "MicrosoftStickyNotes",
         "MSPaint",
