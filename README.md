@@ -67,8 +67,6 @@ Go to the releases\4\55453160-4bf6-41a4-be7f-7cacc781b9b6 file and rename it .zi
 
 ![image](https://user-images.githubusercontent.com/14213202/45259074-6ff93400-b392-11e8-8bd4-3514069a80d4.png)
 
-![image](https://user-images.githubusercontent.com/14213202/45259080-7be4f600-b392-11e8-9dd1-ef25d1b87036.png)
-
 ![image](https://user-images.githubusercontent.com/14213202/45259088-9fa83c00-b392-11e8-8e84-e8fbf9d9d9fe.png)
 
 The file you need is inside that as WASP.dll, (ver 1.2.0.0, 42kb).
@@ -117,6 +115,12 @@ The other Windows 10 specific option 'set default start menu layout for new user
 ![BRU-Script-Running](BRU-2.PNG?raw=true "BRU Script Running")
 
 # Silent / Command line usage
+
+To run from command line launch either an admin command prompt and type powershell or launch an administrator powershell.
+
+You may have to set your execution policy to allow scripts to run. If you have Windows SmartScreen on you may have to right click the ps1 file and click Properties then Unblock file and OK. Or use the PS3+ command `Unblock-file`.
+
+`Set-ExecutionPolicy -ExecutionPolicy RemoteSigned`
 
 The following command line options are supported.
 
