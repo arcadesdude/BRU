@@ -845,7 +845,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                 }
             } # end if ( $Script:progslisttoremove -match "HP\ JumpStart\ Apps|VIP\ Access.*" )
 
-            if ( $Script:progslisttoremove -match "Microsoft Office" ) {
+            if ( $Script:progslisttoremove -match "Microsoft\ Office" ) {
                 # Updated OffScrubc23.vbs for 2013/2016: https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office-ProPlus-Deployment/Deploy-OfficeClickToRun/OffScrubc2r.vbs
                 if ( Test-Path "$($scriptPath)\BRU-uninstall-helpers\OffScrubc2r.vbs" ) {
                     Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\OffScrubc2r.vbs" -Destination $Script:dest 
@@ -1301,7 +1301,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             }
                         } # end if ( $prog.Name -match "McAfee" )
 
-                        if ( $prog.Name -match "Microsoft Office" ) {
+                        if ( $prog.Name -match "Microsoft\ Office" ) {
                             if ( $microsoftofficeC2Ralreadyran ) {
                                 Write-Output "$($prog.Name) has already been removed." | Out-Default
                                 Continue # skip if already ran it as running the remover once gets all languages/installs
@@ -1756,7 +1756,7 @@ BEGIN {
 
         $bloatwarelike = ( 
         # include, in regular expression format
-        # must be regex escaped (and powershell escaped if needed)
+        # must be regex escaped here (and powershell escaped if needed)
         "ActivClient.*",
         "Adobe\ AIR",
         "Bing\ Bar",
@@ -1882,7 +1882,7 @@ BEGIN {
         )
         $bloatwarenotmatch = ( 
         # skip these, do not remove at all
-        # regex matches any part of the string
+        # Matches any part of the string. Will be regex escaped later.
         "Dell Command | Update",
         "Dell ControlVault",
         "Dell Update",
@@ -1914,13 +1914,19 @@ BEGIN {
         "HoloItemPlayerApp",
         "HoloShell",
         "Messaging",
+        "Microsoft.Office.Desktop.Access",              # MS Office UWP apps to exclude
+        "Removing Microsoft.Office.Desktop.Outlook",    # These are removed by "Microsoft\.Office\.Desktop_"
+        "Removing Microsoft.Office.Desktop.Excel",      # which matches in $bloatwarelike
+        "Microsoft.Office.Desktop.Publisher",
+        "Microsoft.Office.Desktop.PowerPoint",
+        "Microsoft.Office.Desktop.Word",
         "MicrosoftSolitaireCollection",
         "MicrosoftStickyNotes",
         "MSPaint",
         "OneConnect",
         "OneNote",
         "People",
-        "Windows\.Photos", #exclude MS app, but allow matching of AdobePHOTOShopExpress
+        "Windows.Photos", #exclude MS app, but allow matching of AdobePHOTOShopExpress
         "Soundrecorder",
         "WindowsAlarms",
         "WindowsCalculator",
@@ -1934,7 +1940,7 @@ BEGIN {
         )
         $specialcasestoremove = ( 
         # special cases below will be removed later after the matching list above are removed first
-        # VERY IMPORTANT, the order in which these are listed is important as they'll be removed in that order. Some programs need to be removed before others. Format is regex, matches any part of the string
+        # VERY IMPORTANT, the order in which these are listed is important as they'll be removed in that order. Some programs need to be removed before others. Matches any part of the string. Will be regex escaped later.
         "CyberLink Media Suite",
         #"Dell Precision Optimizer", # Need to create iss file for this possibly or try -silent instead of /S switch
         "Dell SupportAssist",
@@ -1951,9 +1957,9 @@ BEGIN {
         "HP Client Security Manager",
         "McAfee", # ALL McAfee Consumer Software (runs MCPR.exe)
         "Norton Internet Security",
-        "VIP\ Access.*",
-        "Microsoft\ Office.*", # Trial/OEM Versions of MS Office
-        "Office.*Click\-to\-Run"
+        "VIP Access",
+        "Microsoft Office", # Trial/OEM Versions of MS Office
+        "Office.Click-to-Run"
         )
 
         # skip special cases, then add them back at the end later
@@ -2005,9 +2011,9 @@ BEGIN {
 
             ############## Core regular expression matching magic UWP / Windows Store Programs ##############
 
-            $Global:UWPappsAUtoRemove = @( $Global:UWPappsAU | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Script:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
+            $Global:UWPappsAUtoRemove = @( $Global:UWPappsAU | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Global:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Global:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
         #    $Global:UWPappsAUtoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsAU -match $([regex]::escape($_)); } )
-            $Global:UWPappsProvisionedAppstoRemove = @( $Global:UWPappsProvisionedApps | Where { $Global:bloatwarelikesinglestring } | Where { $_.DisplayName -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Script:specialcasestoremovesinglestring ) { $_.DisplayName -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Script:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
+            $Global:UWPappsProvisionedAppstoRemove = @( $Global:UWPappsProvisionedApps | Where { $Global:bloatwarelikesinglestring } | Where { $_.DisplayName -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Global:specialcasestoremovesinglestring ) { $_.DisplayName -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Global:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
         #    $Global:UWPappsProvisionedAppstoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsProvisionedApps -match $([regex]::escape($_)); } )
 
             Write-Output "" | Out-Default
