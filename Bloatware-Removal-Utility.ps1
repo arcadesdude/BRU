@@ -1,5 +1,5 @@
-﻿#BRU
-#By Ricky Cobb
+﻿# BRU 
+# By Ricky Cobb
 #
 # Bloatware Removal Utility
 # Removes common bloatware from HP, Dell, Lenovo, Sony, Etc
@@ -13,8 +13,6 @@
 Next step if desired to make it fully GUI: 
 
 ---
-
-command line switches to run script silently again with default options
 
 add gui box (ok/cancel?) for system restore point and then with list of selected items for confirming removal
 
@@ -82,11 +80,30 @@ end removal
 
 # Command Line switches
 
-# -silent (or -quiet, -s, -S), run without GUI, implies auto-confirmation, no warnings just runs the removal with default options
+# -silent (or -quiet, -s, -S), run without GUI, implies auto-confirmation, no warnings
+#
 # -ignoredefault (or -nd, -id, -ignoredefaults, -nodefaultsuggestions)
 #     does not automatically remove default suggestions, you'll need to supply what is to be included and what
 #     is to be excluded for removal.
+#
 # -reboot (or -rebootafterremoval), if option is specficied, will reboot after removal in -silent mode without confirmation
+#
+# -include, -includefirst, matched first for inclusion, useful if you want to specifically match something the default suggestions
+#     do not match or specify your own list (using -ignoredefault options)
+#
+# -exclude, -filter, this will be filtered out from the includefirst + default suggestions list (if using that), specify what you do NOT want to match (ex. -exclude "Microsoft\ Office","Microsoft\.Office")
+#
+# -includelast, -specialcases, these will be added after the default matching list and after exclusions are filtered out. Useful for software that needs to go AFTER other software to be removed properly. This list will be parsed in order so you can put what you want to remove in the order it should be removed in.
+#
+# -win10leaverecommendedappsdownloadon, with this option given it will not automatically set the registry keys to stop the suggested auto downloaded UWP Windows10 Store apps (i.e. CandyCrush...etc)
+#
+# -win10leavestartmenuadson, -keepstartads, if this option is give it will NOT set the start menu for new users to get rid of the ContentDeliveryManager Ads. It doesn't affect existing user accounts.
+#
+# -norestorepoint, -skiprestorepoint, -nr, this will not make a System Restore Point if the option is given.
+#
+# -dry, -dr, -dryrun, -detect, -detectonly, -whatif, this option will do a Dry Run and not actually remove anything. This is useful with the silent option to see what the applications will be selected. Recommended you use this first to know what will be removed when you run this silently. To actually uninstall/remove the bloatware don't specify this option. This can be useful when refining your includes and excludes to get the matches correct and the order correct for the specialcases.
+#
+
 
 Param(
 
