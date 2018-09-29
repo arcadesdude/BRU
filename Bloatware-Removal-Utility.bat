@@ -2,6 +2,9 @@
 
 net session >nul 2>&1
 
+setlocal
+cd /d %~dp0
+
     if %errorLevel% == 0 (
 
         if exist BRU-uninstall-helpers\streams.exe (
