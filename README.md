@@ -187,6 +187,15 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 
 # Version History
 
+?/??/2018
+- Added silent command line options, custom include/exclude lists, dry run/WhatIf option, etc - see Silent / Command line usage section
+- Added URL in GUI about window to the github link
+- Fixed match detection bugs and updated comments to match what they are. Only the included items need to be manually Regex escaped
+- Fixed Batch file launcher to fix SmartScreen issues (to prevent Windows SmartScreen from closing script window)
+- Fixed GUI list checked items when refreshing programs list
+- Updated documentation, fixed typos, etc
+
+
 9/16/2018
 - Added streams.exe command in batch file (from Sysinternals) to remove Zone.Identifier so scripts won't get closed without warning by Windows SmartScreen. You'll need to download that separately and put streams.exe in the BRU-uninstall-helpers folder. See "Obtaining Specific Bloatware Uninstall Helpers"
 - Changed Windows Store version of Office detection for preinstalled UWP Office
