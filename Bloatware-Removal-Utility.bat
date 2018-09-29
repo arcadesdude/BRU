@@ -4,23 +4,17 @@ net session >nul 2>&1
 
     if %errorLevel% == 0 (
 
-        setlocal
-        cd /d %~dp0
-
         if exist BRU-uninstall-helpers\streams.exe (
 
-            BRU-uninstall-helpers\streams.exe /accepteula -nobanner -s -d *.ps1
-            BRU-uninstall-helpers\streams.exe /accepteula -nobanner -s -d *.bat
-            BRU-uninstall-helpers\streams.exe /accepteula -nobanner -s -d BRU-uninstall-helpers\*.exe
-            BRU-uninstall-helpers\streams.exe /accepteula -nobanner -s -d BRU-uninstall-helpers\*.dll
-            BRU-uninstall-helpers\streams.exe /accepteula -nobanner -s -d BRU-uninstall-helpers\*.vbs
-
-            ping localhost -n 2 >NUL
-
+            BRU-uninstall-helpers\streams.exe /accepteula -s -d *.ps1
+            BRU-uninstall-helpers\streams.exe /accepteula -s -d *.bat
+            BRU-uninstall-helpers\streams.exe /accepteula -s -d BRU-uninstall-helpers\*.exe
+            BRU-uninstall-helpers\streams.exe /accepteula -s -d BRU-uninstall-helpers\*.dll
+            BRU-uninstall-helpers\streams.exe /accepteula -s -d BRU-uninstall-helpers\*.vbs
         )
 
 	PowerShell.exe -NoProfile -ExecutionPolicy Bypass -Command "& {Start-Process PowerShell.exe -ArgumentList '-NoProfile -NoExit -ExecutionPolicy Bypass -WindowStyle Hidden -File ""%~dpn0.ps1""' -Verb RunAs}"
-    exit
+	exit
 
     ) else (
 
