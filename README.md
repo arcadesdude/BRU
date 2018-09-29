@@ -67,8 +67,6 @@ Go to the releases\4\55453160-4bf6-41a4-be7f-7cacc781b9b6 file and rename it .zi
 
 ![image](https://user-images.githubusercontent.com/14213202/45259074-6ff93400-b392-11e8-8bd4-3514069a80d4.png)
 
-![image](https://user-images.githubusercontent.com/14213202/45259080-7be4f600-b392-11e8-9dd1-ef25d1b87036.png)
-
 ![image](https://user-images.githubusercontent.com/14213202/45259088-9fa83c00-b392-11e8-8e84-e8fbf9d9d9fe.png)
 
 The file you need is inside that as WASP.dll, (ver 1.2.0.0, 42kb).
@@ -118,6 +116,12 @@ The other Windows 10 specific option 'set default start menu layout for new user
 
 # Silent / Command line usage
 
+To run from command line launch either an admin command prompt and type powershell or launch an administrator powershell.
+
+You may have to set your execution policy to allow scripts to run. If you have Windows SmartScreen on you may have to right click the ps1 file and click Properties then Unblock file and OK. Or use the PS3+ command `Unblock-file`.
+
+`Set-ExecutionPolicy -ExecutionPolicy RemoteSigned`
+
 The following command line options are supported.
 
 `-silent (or -quiet or -s)`
@@ -144,7 +148,7 @@ The following command line options are supported.
   
 `  -exclude "keyboard","driver"`
   
- What you put into each "string" above will turn into a single Regex escaped string like `".*keyboard|driver.*"`
+ What you put into each "string" above will turn into a single Regex escaped string like `".*keyboard|driver.*"` That is done automatically by the program so you don't have to escape it here.
 
 `-includelast -specialcases`
 
@@ -152,7 +156,7 @@ The following command line options are supported.
   
 `  -includelast "HP Client Security Manager","HP Support Assistant"`
   
- What you put into each "string" above will turn into a single Regex escaped string like `".*HP\ Client\ Security\ Manager|HP\ Support\ Assistant.*"`
+ What you put into each "string" above will turn into a single Regex escaped string like `".*HP\ Client\ Security\ Manager|HP\ Support\ Assistant.*"` You don't have to do that but it is good to know that happens in the program automatically.
 
 `-win10leaverecommendedappsdownloadon`
 
@@ -166,7 +170,7 @@ The following command line options are supported.
 
   This skips the Windows Restore Point creation attempt which is on by default.
 
-`-dry- dr- dryrun -detect -detectonly -whatif`
+`-dry -dr -dryrun -detect -detectonly -whatif`
 
   Dry Run / Detect Only / WhatIf mode will not remove anything but show you what your -include and -exclude (and -specialcases) filters will target if you're working on trying to target just specific software to be removed.
   
@@ -175,7 +179,7 @@ If you find a setup that works for you you can modify the batch script to specif
 
 # Log
 
-Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If running with the automatical reboot option this is handy to see if something did not automatically uninstall and what error message was given.
+Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If running with the automatic reboot option this is handy to see if something did not automatically uninstall and what error message was given.
 
 # After running
 
