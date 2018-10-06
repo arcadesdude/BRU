@@ -1861,7 +1861,7 @@ BEGIN {
         "MediaSuiteEssentials",
         "Messaging",
         "Microsoft3DViewer",
-        "Microsoft\.Office\.Desktop_", # Windows Store version of Office
+        "Microsoft\.Office\.Desktop$", # Windows Store version of Office
         "MicrosoftOfficeHub",
         "MinecraftUWP",
         "MircastView",
@@ -2018,7 +2018,7 @@ BEGIN {
 
         ###############################################################################################################
 
-        if ( $Script:winVer -gt 6.1) { # UWP apps only in Win 2012/8+
+        if ( $Script:winVer -gt 6.1 ) { # UWP apps only in Win 2012/8+
 
             ############## Core regular expression matching magic UWP / Windows Store Programs ##############
 
@@ -2041,7 +2041,8 @@ BEGIN {
             }
             Write-Output "" | Out-Default
             $Global:UWPappsProvisionedAppstoRemove | % { $_.PackageName | Out-Default }
-        }
+
+        } # end if ( $Script:winVer -gt 6.1 )
 
         ###############################################################################################################
 
