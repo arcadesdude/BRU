@@ -873,7 +873,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
             } # end if ( $Script:progslisttoremove -match "Microsoft Office" )
 
             if ( $Script:progslisttoremove -match "McAfee" ) {
-                if ( Test-Path "$($scriptPath)\BRU-uninstall-helpers\mcpr.exe" ) {
+                if ( Test-Path "$($scriptPath)\BRU-uninstall-helpers\mcpr.exe" ) { # updated for mcpr version 10.2.248.0, be sure to update your helpers!
                     Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\mcpr.exe" -Destination $Script:dest 
                 } else {
                     Write-Warning "McAfee uninstall helper MCPR.exe (McAfee Consumer Product Removal Tool) not found in $($scriptPath)\BRU-uninstall-helpers\"  | Out-Default
@@ -1295,7 +1295,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                     Set-Location "$($env:temp)\MCPR"
                                     if ( Test-Path "$($env:temp)\MCPR\mccleanup.exe" ) {
                                         $uninstallpath = "$($env:temp)\MCPR\mccleanup.exe"
-                                        $uninstallarguments = "-silent -p PEF,MXD,CSP,Sustainability,MOCP,MFP,APPSTATS,Auth,EMproxy,FWdiver,HW,MAS,MAT,MBK,MCPR,McProxy,McSvcHost,VUL,MHN,MNA,MOBK,MPFP,MPFPCU,MPS,SHRED,MPSCU,MQC,MQCCU,MSAD,MSHR,MSK,MSKCU,MWL,NMC,RedirSvc,VS,REMEDIATION,MSC,MFSY,YAP,TRUEKEY,LAM,RESIDUE"
+                                        $uninstallarguments = "-silent -p StopServices,MFSY,PEF,MXD,CSP,Sustainability,MOCP,MFP,APPSTATS,Auth,EMproxy,FWdiver,HW,MAS,MAT,MBK,MCPR,McProxy,McSvcHost,VUL,MHN,MNA,MOBK,MPFP,MPFPCU,MPS,SHRED,MPSCU,MQC,MQCCU,MSAD,MSHR,MSK,MSKCU,MWL,NMC,RedirSvc,VS,REMEDIATION,MSC,YAP,TRUEKEY,LAM,RESIDUE"
                                         Write-Output "MCPR may take quite a while to run. Please wait..." | Out-Default
                                         function functionMcAfeeAfterUninstallerStarted {
                                             Set-Location $Script:dest
