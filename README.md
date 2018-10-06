@@ -187,12 +187,13 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 
 # Version History
 
-?/??/2018
+10/06/2018
 - Added silent command line options, custom include/exclude lists, dry run/WhatIf option, etc - see Silent / Command line usage section
 - Added URL in GUI about window to the github link
 - Fixed match detection bugs and updated comments to match what they are. Only the included items need to be manually Regex escaped
 - Fixed Batch file launcher to fix SmartScreen issues (to prevent Windows SmartScreen from closing script window)
 - Fixed GUI list checked items when refreshing programs list
+- Updated McAfee uninstall helper launch args
 - Updated documentation, fixed typos, etc
 
 
