@@ -2453,8 +2453,11 @@ BEGIN {
             $prog = $progslisttodisplay[$i]
             $progListViewItem = New-Object System.Windows.Forms.ListViewItem( "" )
             $backgroundhighlight = $backgroundhighlight -xor 1
+            $progListViewItem.ForeColor = [System.Drawing.Color]::Beige
+            $progListViewItem.BackColor = [System.Drawing.Color]::DarkSlateGray
             if ( $backgroundhighlight ) {
                 $progListViewItem.BackColor = [System.Drawing.Color]::Beige
+                $progListViewItem.ForeColor = [System.Drawing.Color]::DarkSlateGray
             }
             $proglistviewColumnsArray | Select-Object -Skip 1 | % { $progListViewItem.SubItems.Add("$($prog.$($_))") | Out-Null }
             $programsListview.Items.Add($progListViewItem) | Out-Null
