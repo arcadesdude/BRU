@@ -720,7 +720,7 @@ if ( !($Global:isSilent) ) {
 
     $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
     
-    $progslistSelected = $Script:progslisttoremove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
+    $progslistSelected = @( $Script:progslisttoremove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name )
     
     if ( $Script:winVer -gt 6.1 ) {
     
@@ -1861,7 +1861,7 @@ BEGIN {
         "MediaSuiteEssentials",
         "Messaging",
         "Microsoft3DViewer",
-        "Microsoft\.Office\.Desktop$", # Windows Store version of Office
+        "Microsoft\.Office\.Desktop", # Windows Store version of Office
         "MicrosoftOfficeHub",
         "MinecraftUWP",
         "MircastView",
@@ -2018,7 +2018,7 @@ BEGIN {
 
         ###############################################################################################################
 
-        if ( $Script:winVer -gt 6.1 ) { # UWP apps only in Win 2012/8+
+        if ( $Script:winVer -gt 6.1) { # UWP apps only in Win 2012/8+
 
             ############## Core regular expression matching magic UWP / Windows Store Programs ##############
 
@@ -2041,8 +2041,7 @@ BEGIN {
             }
             Write-Output "" | Out-Default
             $Global:UWPappsProvisionedAppstoRemove | % { $_.PackageName | Out-Default }
-
-        } # end if ( $Script:winVer -gt 6.1 )
+        }
 
         ###############################################################################################################
 
@@ -2453,11 +2452,8 @@ BEGIN {
             $prog = $progslisttodisplay[$i]
             $progListViewItem = New-Object System.Windows.Forms.ListViewItem( "" )
             $backgroundhighlight = $backgroundhighlight -xor 1
-            $progListViewItem.ForeColor = [System.Drawing.Color]::Beige
-            $progListViewItem.BackColor = [System.Drawing.Color]::DarkSlateGray
             if ( $backgroundhighlight ) {
                 $progListViewItem.BackColor = [System.Drawing.Color]::Beige
-                $progListViewItem.ForeColor = [System.Drawing.Color]::DarkSlateGray
             }
             $proglistviewColumnsArray | Select-Object -Skip 1 | % { $progListViewItem.SubItems.Add("$($prog.$($_))") | Out-Null }
             $programsListview.Items.Add($progListViewItem) | Out-Null
