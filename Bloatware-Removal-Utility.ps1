@@ -721,7 +721,7 @@ if ( !($Global:isSilent) ) {
     $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
     
     $progslistSelected = @( $Script:progslisttoremove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name )
-    
+
     if ( $Script:winVer -gt 6.1 ) {
     
         $Global:UWPappsAUtoRemove = $Global:UWPappsAUtoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
@@ -2019,7 +2019,7 @@ BEGIN {
         ###############################################################################################################
 
         if ( $Script:winVer -gt 6.1) { # UWP apps only in Win 2012/8+
-
+            
             ############## Core regular expression matching magic UWP / Windows Store Programs ##############
 
             $Global:UWPappsAUtoRemove = @( $Global:UWPappsAU | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Global:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Global:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
