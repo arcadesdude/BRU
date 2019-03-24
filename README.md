@@ -187,6 +187,13 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 
 # Version History
 
+03/24/2019
+- Fixed detection of MS Office UWP apps
+- Fixed selection bug when generating default detected list of bloatware when running in command line options mode with more than one match
+- Added silent removal support for "Lenovo App Explorer"
+- Updated documentation
+
+
 10/06/2018
 - Added silent command line options, custom include/exclude lists, dry run/WhatIf option, etc - see Silent / Command line usage section
 - Added URL in GUI about window to the github link
