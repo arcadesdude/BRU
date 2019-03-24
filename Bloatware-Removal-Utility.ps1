@@ -1279,9 +1279,6 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                 $uninstallarguments = "/S"+" "+$uninstallarguments
                         }
 
-
-##############################
-
                         if ( $prog.Name -match "Lenovo App Explorer" ) {
                             $waitForExitAfterUninstallerStarted = 0
                             $uninstallprocname = "Un_A"
@@ -1296,7 +1293,8 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                         param($Script:dest)
                                         Start-Sleep -Seconds 1
 
-                                        Write-Output "$($Script:dest)\WASP.dll" | Out-Default
+                                        #Write-Output "$($Script:dest)\WASP.dll" | Out-Default
+                                        Write-Output "Running GUI automation tool 'Windows Automation Snapin for PowerShell'..."
 
                                         if ( Test-Path "$($Script:dest)\WASP.dll" ) {
                                             $loadWASP = "$($Script:dest)\WASP.dll"
@@ -1318,15 +1316,12 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                     Write-Warning "Uninstall of $($prog.Name) aborted due to wait timeout of uninstaller process name: $($uninstallprocname)" | Out-Default
                                     Write-Warning "Reboot and manually remove program." | Out-Default
                                 }
-                                sleepProgress (@{"Seconds" = 30})
-                                #Remove-Item "$Script:dest\Connecting" -Force -Verbose -ErrorAction SilentlyContinue
-                                #Remove-Item "$Script:dest\1" -Force -Verbose -ErrorAction SilentlyContinue
+
+                                # Uninstall Started, wait for it to finish...
+                                $waittimeoutexitcode = waitForProcessToStopOrTimeout $uninstallprocname 20
                             }
                             $functionAfterUninstallerStarted = "LenovoAppExplorerAfterUninstallerStarted"
                         }
-
-##############################
-
 
                         if ( $prog.Name -match "McAfee" ) {
                             if ( $MCPRalreadyran ) {
@@ -2290,6 +2285,25 @@ BEGIN {
             return 258
         } else {
             Write-Host "Process `'$procname`' has started. Continuing..."
+            return 0
+        }
+    }
+
+#############
+
+    function waitForProcessToStopOrTimeout( [string]$procname, [int]$timeoutvalue ) {
+    # Takes process name (without exe) and time value in seconds, waits until process stops or timesout
+        [int]$waittries = 0
+        Write-Host "Waiting until Process `'$procname`' has exited or until $($timeoutvalue) seconds have passed..."
+        while ( (Get-Process $procname -ErrorAction SilentlyContinue) -and ($waittries -lt $timeoutvalue) )  {
+            Start-Sleep -Seconds 1
+            $waittries += 1
+        }
+        if ( $waittries -ge $timeoutvalue ) {
+            Write-Host "Waiting for Process `'$procname`' to exit timed out."
+            return 258
+        } else {
+            Write-Host "Process `'$procname`' has exited. Continuing..."
             return 0
         }
     }
