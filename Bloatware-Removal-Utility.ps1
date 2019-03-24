@@ -853,14 +853,14 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                 }
             } # end if ( ($Script:progslisttoremove -match "HP Client Security Manager") -or ($Script:progslisttoremove -match "ProtectTools Security Manager") )
 
-            if ( $Script:progslisttoremove -match "HP\ JumpStart\ Apps|VIP\ Access.*" ) {
+            if ( $Script:progslisttoremove -match "HP\ JumpStart\ Apps|VIP\ Access.*|Lenovo\ App\ Explorer" ) {
                 if ( Test-Path "$($scriptPath)\BRU-uninstall-helpers\WASP.dll" ) {
                     Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\WASP.dll" -Destination $Script:dest
                 } else {
                     Write-Warning "WASP uninstall helper WASP.dll (Windows Automation Snapin for PowerShell) not found in $($scriptPath)\BRU-uninstall-helpers\"  | Out-Default
                     Write-Warning "See: https://wasp.codeplex.com/" | Out-Default
                 }
-            } # end if ( $Script:progslisttoremove -match "HP\ JumpStart\ Apps|VIP\ Access.*" )
+            } # end if ( $Script:progslisttoremove -match "HP\ JumpStart\ Apps|VIP\ Access.*|Lenovo\ App\ Explorer" )
 
             if ( $Script:progslisttoremove -match "Microsoft\ Office" ) {
                 # Updated OffScrubc23.vbs for 2013/2016: https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office-ProPlus-Deployment/Deploy-OfficeClickToRun/OffScrubc2r.vbs
@@ -1278,6 +1278,54 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             -and ( $prog.Name -notmatch "HP\ Connection\ Optimizer" ) ) {
                                 $uninstallarguments = "/S"+" "+$uninstallarguments
                         }
+
+
+##############################
+
+                        if ( $prog.Name -match "Lenovo App Explorer" ) {
+                            $waitForExitAfterUninstallerStarted = 0
+                            $uninstallprocname = "Un_A"
+                            function LenovoAppExplorerAfterUninstallerStarted {
+                                $waittimeoutexitcode = waitForProcessToStartOrTimeout $uninstallprocname 20
+                                if ( $waittimeoutexitcode -eq 0 ) {
+                                    sleepProgress (@{"Seconds" = 5}) 
+                                    # Using WASP.dll commands (Windows Automation Snapin for PowerShell)
+
+                                    $scriptblock = {
+
+                                        param($Script:dest)
+                                        Start-Sleep -Seconds 1
+
+                                        Write-Output "$($Script:dest)\WASP.dll" | Out-Default
+
+                                        if ( Test-Path "$($Script:dest)\WASP.dll" ) {
+                                            $loadWASP = "$($Script:dest)\WASP.dll"
+                                            [void][System.Reflection.Assembly]::LoadFrom("$($loadWASP)")
+                                            Import-Module "$($Script:dest)\WASP.dll"
+                                            $a = Select-Window $uninstallprocname | Where { $_.Title -match "Uninstall Lenovo App Explorer"} | Set-WindowActive
+                                            $a = Select-Window $uninstallprocname | Select -First 1 | Select-Control -Title "Uninstall Lenovo App Explorer" | Send-Click
+                                        } else {
+                                            Write-Warning "$($Script:dest)\WASP.dll wasn't found or couldn't be loaded." | Out-Default
+                                        }
+                                    } # end of $scriptblock
+
+                                    ###### LoadingWASP #########################################################
+                                    Start-Job $scriptblock -ArgumentList $Script:dest | Out-Null
+                                    Get-Job | Wait-Job | Receive-Job
+                                    ###### UnLoadingWASP #######################################################
+
+                                } else {
+                                    Write-Warning "Uninstall of $($prog.Name) aborted due to wait timeout of uninstaller process name: $($uninstallprocname)" | Out-Default
+                                    Write-Warning "Reboot and manually remove program." | Out-Default
+                                }
+                                sleepProgress (@{"Seconds" = 30})
+                                #Remove-Item "$Script:dest\Connecting" -Force -Verbose -ErrorAction SilentlyContinue
+                                #Remove-Item "$Script:dest\1" -Force -Verbose -ErrorAction SilentlyContinue
+                            }
+                            $functionAfterUninstallerStarted = "LenovoAppExplorerAfterUninstallerStarted"
+                        }
+
+##############################
 
 
                         if ( $prog.Name -match "McAfee" ) {
