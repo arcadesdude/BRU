@@ -1701,17 +1701,18 @@ BEGIN {
             $Script:proglistwithdupes = Get-WMIobject -class Win32_Product
         }
 
-        $a = (Get-ChildItem -Recurse HKLM:Software\Microsoft\Windows\CurrentVersion\Uninstall | gp | Where { $_.DisplayName -ne $null -and $_.UninstallString -ne $null } )
-        $b = $null
+        $a = @()
+        $a = @(Get-ChildItem -Recurse HKLM:Software\Microsoft\Windows\CurrentVersion\Uninstall | gp | Where { $_.DisplayName -ne $null -and $_.UninstallString -ne $null } )
+        $b = @()
         if (Test-Path HKLM:Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall) {
-            $b = (Get-ChildItem -Recurse HKLM:Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall | gp | where { $_.Displayname -ne $null -and $_.UninstallString -ne $null } )
+            $b = @(Get-ChildItem -Recurse HKLM:Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall | gp | where { $_.Displayname -ne $null -and $_.UninstallString -ne $null } )
         }
-        $c = $null
+        $c = @()
         if (Test-Path HKCU:Software\Microsoft\Windows\CurrentVersion\Uninstall) {
-            $c = (Get-ChildItem -Recurse HKCU:Software\Microsoft\Windows\CurrentVersion\Uninstall | gp | Where { $_.DisplayName -ne $null -and $_.UninstallString -ne $null  } )
+            $c = @(Get-ChildItem -Recurse HKCU:Software\Microsoft\Windows\CurrentVersion\Uninstall | gp | Where { $_.DisplayName -ne $null -and $_.UninstallString -ne $null  } )
         }
 
-        $proglistwithdupes = ((( $proglistwithdupes | Select-Object Name,IdentifyingNumber) + (($a+$b+$c) | select @{Name="Name";Expression={$_."DisplayName"}},UninstallString,@{Name="Version";Expression={$_."DisplayVersion"}},Publisher,QuietUninstallString)) | sort UninstallString)
+        $proglistwithdupes = @((( $proglistwithdupes | Select-Object Name,IdentifyingNumber) + (($a+$b+$c) | select @{Name="Name";Expression={$_."DisplayName"}},UninstallString,@{Name="Version";Expression={$_."DisplayVersion"}},Publisher,QuietUninstallString)) | sort UninstallString)
 
         ###############################################################################################################
 
