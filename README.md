@@ -187,6 +187,9 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 
 # Version History
 
+06/02/2019
+- Fixed bug in function refreshProgramsList when adding registry results from multiple keys
+
 03/24/2019
 - Fixed detection of MS Office UWP apps
 - Fixed selection bug when generating default detected list of bloatware when running in command line options mode with more than one match
