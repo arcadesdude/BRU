@@ -1712,7 +1712,7 @@ BEGIN {
             $c = @(Get-ChildItem -Recurse HKCU:Software\Microsoft\Windows\CurrentVersion\Uninstall | gp | Where { $_.DisplayName -ne $null -and $_.UninstallString -ne $null  } )
         }
 
-        $proglistwithdupes = @((( $proglistwithdupes | Select-Object Name,IdentifyingNumber) + (($a+$b+$c) | select @{Name="Name";Expression={$_."DisplayName"}},UninstallString,@{Name="Version";Expression={$_."DisplayVersion"}},Publisher,QuietUninstallString)) | sort UninstallString)
+        $proglistwithdupes = @((@( $proglistwithdupes | Select-Object Name,IdentifyingNumber) + @(($a+$b+$c) | select @{Name="Name";Expression={$_."DisplayName"}},UninstallString,@{Name="Version";Expression={$_."DisplayVersion"}},Publisher,QuietUninstallString)) | sort UninstallString)
 
         ###############################################################################################################
 
