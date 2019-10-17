@@ -1714,6 +1714,7 @@ BEGIN {
 
         $proglistwithdupes = @((@( $proglistwithdupes | Select-Object Name,IdentifyingNumber) + @(($a+$b+$c) | select @{Name="Name";Expression={$_."DisplayName"}},UninstallString,@{Name="Version";Expression={$_."DisplayVersion"}},Publisher,QuietUninstallString)) | sort UninstallString)
 
+
         ###############################################################################################################
 
         if ( $Script:winVer -gt 6.1) { # UWP apps only in Win 2012/8+
@@ -1832,6 +1833,11 @@ BEGIN {
         "Evernote.*",
         "Google\ Toolbar.*",
         "^HP\ .*",
+        "HPInc.EnergyStar",
+        "HPPrinterControl",
+        "HPPrivacySettings",
+        "HPSupportAssistant",
+        "HPSystemEventUtility",
         "Discover\ HP",
         "HP\ Touchpoint",
         "^Hewlett\-Packard.*",
