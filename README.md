@@ -186,6 +186,13 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+10/17/2019
+- Added "HPInc.EnergyStar" UWP  app to suggested apps
+- Added "HPPrinterControl" UWP app to suggested apps
+- Added "HPPrivacySettings" UWP app to suggested apps
+- Added "HPSupportAssistant" UWP app to suggested apps
+- Added "HPSystemEventUtility" UWP app to suggested apps
+
 08/29/2019
 - Fixed minor bug in programs list generation
 
