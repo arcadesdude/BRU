@@ -173,7 +173,12 @@ The following command line options are supported.
 `-dry -dr -dryrun -detect -detectonly -whatif`
 
   Dry Run / Detect Only / WhatIf mode will not remove anything but show you what your -include and -exclude (and -specialcases) filters will target if you're working on trying to target just specific software to be removed.
-  
+
+# Full example from Powershell admin prompt:
+
+Remove All HP apps and do the Client Security Manager and Support Assistant last:
+`.\Bloatware-Removal-Utility.ps1 -silent -nd -includelast "HP Client Security Manager","HP Support Assistant" -include "HP\ .*"`
+
 If you find a setup that works for you you can modify the batch script to specify the options. The current batch script will also run the streams.exe program if you've included it in the uninstall helpers folder to remove the download zone information from the PS1/VBS/BAT/EXE files so Windows SmartScreen doesn't stop the script from running when launching.
 
 
@@ -186,6 +191,10 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+11/23/2019
+- Added logging full command line options if run silently
+- Fixed https://github.com/arcadesdude/BRU/issues/5 "-includelast or -specialcases not working"
+
 10/17/2019
 - Added "HPInc.EnergyStar" UWP  app to suggested apps
 - Added "HPPrinterControl" UWP app to suggested apps

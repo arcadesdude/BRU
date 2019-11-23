@@ -170,7 +170,9 @@ if (!($Global:isSilent)) {
 
 #Save path that the script is run from (e.g. "usbflashdriveletter:\" )
 $scriptPath = (Split-Path -Parent $MyInvocation.MyCommand.Definition).TrimEnd('\')
+$scriptFullLaunchCmd = ($MyInvocation.Line)
 $scriptName = (Split-Path -Leaf $MyInvocation.MyCommand.Definition)
+
 
 $Script:dest = "C:\BRU" # no trailing slash, for iss response files created using Set-Content and copying uninstall helper files so we can remove flash drive or removable media the script is run from if needed
 if ( !(Test-path $Script:dest) ) { md -Path $Script:dest | Out-Null }
@@ -262,6 +264,8 @@ if ( (!(Test-Path "$($scriptPath)\$($scriptNameNoExtension).ini") -and (!($Globa
 
 if ( $Global:isSilent ) { # Running silently ignores the saved preferences file
     Write-Output "`nRunning silently using -silent switch."
+    Write-Output "`nFull command line:"
+    Write-Output "$scriptFullLaunchCmd"
 } else {
     importSettings
 }
@@ -2053,8 +2057,7 @@ BEGIN {
         $Script:progslisttoremove = @( $Global:proglist | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Global:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Global:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
 
         # Add programs (special cases) that have to be removed after other programs to the end of the list
-
-        $Script:progslisttoremove += @( $specialcasestoremove | % { if ( $_ ) { $currentspecialcase = $_; $Global:proglist -match $_ } } | Where { $_.Name -match $currentspecialcase } | Where { $_.Name -notmatch $Global:bloatwarenotmatchsinglestring } )
+        $Script:progslisttoremove += @( $specialcasestoremove | % { if ( $_ ) { $currentspecialcase = $_; $Global:proglist -match $_ } } | Where { $_.Name -match $currentspecialcase } | Where { if ([string]::IsNullOrEmpty($Global:bloatwarenotmatchsinglestring)) { $true } else { $_.Name -notmatch $Global:bloatwarenotmatchsinglestring } } )
         # this only matches each item in specialcasestoremove against the Name in proglist, to exclude when it matches both name and uninstall strings (e.g. 'HP ProtectTools' and the uninstallstring path also contains that text.)
 
         $ignoreDefaultSuggestionListMsg = "Nothing suggested by default because running with -ignoredefaultsuggestions switch."
