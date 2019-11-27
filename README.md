@@ -191,6 +191,9 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+11/27/2019
+- Added Added ASUS software including ASUSGiftBox, ASUSPCAssistant (MyASUS) and McAfee Security (UWP) app detection to the list of suggested apps to remove.
+
 11/23/2019
 - Added logging full command line options if run silently
 - Fixed https://github.com/arcadesdude/BRU/issues/5 "-includelast or -specialcases not working"
