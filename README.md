@@ -138,9 +138,9 @@ The following command line options are supported.
 
 `-include -includefirst`
 
-  This will allow you to choose what you want to include. This comes after the default list if that is used or, if you want to not use the built in suggestions be sure to use the -nd switch (or other above aliases) to prevent the default detection list of including what you don't want. You would include using *Regular Expressions* (unescaped and case-INsensitive) such as the following:
-  
-`  -include "PROGRAM\ NAME","Something-else","HP\ .*"`
+  This will allow you to choose what you want to include. This comes after the default list if that is used or, if you want to not use the built in suggestions be sure to use the -nd switch (or other above aliases) to prevent the default detection list of including what you don't want. You would include using *Regular Expressions* (unescaped and case-INsensitive). The list to include is separated by | if you need to use | in the program name you can escape it with a preceeding backslash \ Here is an example:
+
+`   -include "PROGRAM\ NAME|Something-else|HP\ .*"`
 
 `-exclude -filter`
 
@@ -191,6 +191,9 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+01/28/2020
+- Added LenovoUtility (Vantage) UWP app detection to the list of suggested apps to remove.
+
 11/27/2019
 - Added Added ASUS software including ASUSGiftBox, ASUSPCAssistant (MyASUS) and McAfee Security (UWP) app detection to the list of suggested apps to remove.
 
