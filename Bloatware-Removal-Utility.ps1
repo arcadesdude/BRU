@@ -1,4 +1,4 @@
-﻿# BRU 
+﻿# BRU
 # By Ricky Cobb
 #
 # Bloatware Removal Utility
@@ -6,11 +6,11 @@
 # Supports Powershell 2+, Windows 7/Server 2008 R2 (Winver 6.1+) and newer - including removing Win8/10+ UWP (metro/modern) Apps.
 #
 # Reboot before running this script and after running it (if anything is removed)
-# 
+#
 # Supporting files that are needed are found in the BRU-uninstall-helpers folder.
 
 <#
-Next step if desired to make it fully GUI: 
+Next step if desired to make it fully GUI:
 
 ---
 
@@ -114,19 +114,19 @@ Param(
         [Parameter(Mandatory=$False)]
             [Alias("nd", "id", "ignoredefault", "ignoredefaults", "ignoredefaultsuggestions", "nodefaultsuggestions")]
             [switch]$Global:isIgnoreDefaultSuggestionListSilentOption,
-        
+
         [Parameter(Mandatory=$False)]
             [Alias("reboot", "rebootafterremoval")]
             [switch]$Global:isRebootAfterRemovalswitchSilentOption,
-        
+
         [Parameter(Mandatory=$False)]
             [Alias("include", "includefirst")]
             [string[]]$Global:bloatwareIncludeFirstSilentOption,
-        
+
         [Parameter(Mandatory=$False)]
             [Alias("exclude", "filter")]
             [string[]]$Global:bloatwareExcludeSilentOption,
-        
+
         [Parameter(Mandatory=$False)]
             [Alias("includelast", "specialcases")]
             [string[]]$Global:bloatwareIncludeLastSilentOption,
@@ -153,7 +153,7 @@ Param(
 # Go read BEGIN block to follow program flow then come back here to PROCESS
 PROCESS {
 
-if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator" )) { 
+if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator" )) {
     Write-Output 'You must be logged in as a member of the Adminstrators group for this script to execute properly.'  | Out-Default
     Write-Output "" | Out-Default
     Write-Output "This window is safe to close." | Out-Default
@@ -189,7 +189,7 @@ Write-Output "PowerShell Version: $($PSVersionTable.PSVersion.Major)" | Out-Defa
 
 try {
     [float]$Script:winVer = (((Get-CimInstance Win32_OperatingSystem).Version.Split('.') | Select -first 2) -join '.')
-} catch { 
+} catch {
     [float]$Script:winVer = ((([Environment]::OSVersion.Version).ToString().Split('.') | Select -first 2) -join '.')
 }
 
@@ -203,7 +203,7 @@ if ( $matches[2] ) {
 } else {
     Write-Warning "No match for (Split-Path -Leaf `$MyInvocation.MyCommand.Definition) found." | Out-Default
     Write-Warning "Please rename this program in the format programname.ext" | Out-Default
-    return   
+    return
 }
 
 $Global:statusupdate =  $null
@@ -281,7 +281,7 @@ if ( $Global:isSilent ) { # -silent always implies no confirmation prompts
 
     if ( $Global:isWin10RecommendedDownloadsOffSilentOption ) {
         $Global:optionsWin10RecommendedDownloadsOff = $false
-        $Global:globalSettings["optionsWin10RecommendedDownloadsOff"] = $Global:optionsWin10RecommendedDownloadsOff     
+        $Global:globalSettings["optionsWin10RecommendedDownloadsOff"] = $Global:optionsWin10RecommendedDownloadsOff
     }
 
     if ( $Global:isWin10StartMenuAdsSilentOption ) {
@@ -352,7 +352,7 @@ if ( !($Global:isSilent) ) {
     $fileExitMenu.Name = "fileExitMenu"
     $fileExitMenu.Size = New-Object System.Drawing.Size(152, 22)
     $fileExitMenu.Text = "&Exit"
-    $fileExitMenu.TextAlign = "MiddleLeft" 
+    $fileExitMenu.TextAlign = "MiddleLeft"
     function doFileExitMenu($Sender,$e){
         $mainUI.Close()
         Return
@@ -524,7 +524,7 @@ if ( !($Global:isSilent) ) {
     $viewShowSuggestedBloatware.Checked = $true
     function doviewShowSuggestedBloatware($Sender,$e){
         toggleSuggestedBloatware
-        Write-Host "View status of $($viewShowSuggestedBloatware.Text.Replace('&','')) changed to: $($Script:showSuggestedtoRemove)" | Out-Default    
+        Write-Host "View status of $($viewShowSuggestedBloatware.Text.Replace('&','')) changed to: $($Script:showSuggestedtoRemove)" | Out-Default
     }
     $viewShowSuggestedBloatware.Add_Click( { doviewShowSuggestedBloatware $viewShowSuggestedBloatware $EventArgs} )
     $viewMenu.DropDownItems.Add($viewShowSuggestedBloatware) | Out-Null
@@ -703,7 +703,7 @@ if ( !($Global:isSilent) ) {
             Start-Sleep -Seconds 2
         }
 
-        
+
         refreshProgramsList
 
 
@@ -713,7 +713,7 @@ if ( !($Global:isSilent) ) {
     $buttonToggleConsole.Enabled = $true
     $buttonCancelRemoval.Enabled = $true
     $buttonConfirmedSelectedforRemoval.Enabled = $true
-    $mainUI.Activate()    
+    $mainUI.Activate()
     $mainUI.ShowDialog() | Out-Null
 
     ################## GUI is Closed ##################################################################################
@@ -723,16 +723,16 @@ if ( !($Global:isSilent) ) {
     refreshProgramsList # get default $Script:progslisttoremove
 
     $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
-    
+
     $progslistSelected = @( $Script:progslisttoremove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name )
 
     if ( $Script:winVer -gt 6.1 ) {
-    
+
         $Global:UWPappsAUtoRemove = $Global:UWPappsAUtoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
         $Global:UWPappsProvisionedAppstoRemove = $Global:UWPappsProvisionedAppstoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
         $progslistSelected += @( $Global:UWPappsAUtoRemove )
         $progslistSelected += @( $Global:UWPappsProvisionedAppstoRemove )
-    
+
     }
 
     [int]$Script:numofSelectedProgs = @('0',($progslistSelected | Measure-Object).Count)[($progslistSelected | Measure-Object).Count -gt 0]
@@ -741,7 +741,7 @@ if ( !($Global:isSilent) ) {
 } # end if ( !($Global:isSilent) )
 
 if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
-    
+
     if ( !($Global:isSilent) ) {
         showConsole | Out-Null
     }
@@ -778,8 +778,8 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                 if ( isObjectEqual $selectedprog $prog ) {
                     $removeOrderedSelectedList += $selectedProg
                     $progslistSelected = $progslistSelected | Where { $_ -ne $selectedProg }
-                }            
-            }        
+                }
+            }
         }
 
         # add items selected that weren't in progslisttoremove but were selected to $progslistSelected
@@ -790,7 +790,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         $removeOrderedSelectedUWPappsProvisioned = $removeOrderedSelectedList | Where { $_.PackageName }
         # remove the UWP apps from the ordered selected progslist
         $removeOrderedSelectedList = $removeOrderedSelectedList | Where { !($_.PackageFullName) -and !($_.PackageName) } | Select-Object -Skip 1
-        
+
         Write-Output "" | Out-Default
         Write-Verbose -Verbose "Selected and ordered programs to be removed:"
         Write-Output $removeOrderedSelectedList | Out-Default
@@ -811,7 +811,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         # save original detections
         #$Script:progslisttoremoveOriginal = $Script:progslisttoremove
 
-        $Script:progslisttoremove = $removeOrderedSelectedList 
+        $Script:progslisttoremove = $removeOrderedSelectedList
 
 
         if ( $Script:winVer -gt 6.1 ) {
@@ -827,12 +827,12 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         if ( !($Global:isDetectOnlyDryRunSilentOption) ) {
 
             $isConfirmed = systemRestorePointIfRequired
-           
+
             if ( $Global:requireConfirmationBeforeRemoval -and $isConfirmed ) { # options chosen, no system restore point but wants confirmation
                 Write-Host "`nProceed with Bloatware Removal?`n" | Out-Default
                 [bool]$isConfirmed = doOptionsRequireConfirmation
             }
-        
+
         }
 
         if ( !($isConfirmed) -or $Global:isDetectOnlyDryRunSilentOption ) {
@@ -846,11 +846,11 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
             Write-Output "" | Out-Default
             Write-Output "Copying Helper Files to $($Script:dest)\ ..." | Out-Default
             Write-Output "If running from removable media like a flash drive`nPlease do not remove it yet." | Out-Default
-     
+
             if ( ($Script:progslisttoremove -match "HP Client Security Manager") -or ($Script:progslisttoremove -match "ProtectTools Security Manager") ) {
                 if ( Test-Path "$($scriptPath)\BRU-uninstall-helpers\devcon_x$($Script:osArch).exe" ) {
                     Write-Output "" | Out-Default
-                    Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\devcon_x$($Script:osArch).exe" -Destination $Script:dest 
+                    Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\devcon_x$($Script:osArch).exe" -Destination $Script:dest
                 } else {
                     Write-Warning "HP Client Security Manager uninstall helper devcon_x$($Script:osArch).exe not found in $($scriptPath)\BRU-uninstall-helpers\"  | Out-Default
                     Write-Warning "See: https://networchestration.wordpress.com/2016/07/11/how-to-obtain-device-console-utility-devcon-exe-without-downloading-and-installing-the-entire-windows-driver-kit-100-working-method/" | Out-Default
@@ -869,7 +869,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
             if ( $Script:progslisttoremove -match "Microsoft\ Office" ) {
                 # Updated OffScrubc23.vbs for 2013/2016: https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office-ProPlus-Deployment/Deploy-OfficeClickToRun/OffScrubc2r.vbs
                 if ( Test-Path "$($scriptPath)\BRU-uninstall-helpers\OffScrubc2r.vbs" ) {
-                    Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\OffScrubc2r.vbs" -Destination $Script:dest 
+                    Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\OffScrubc2r.vbs" -Destination $Script:dest
                 } else {
                     Write-Warning "Microsoft Office Click2Run (Trial/OEM) uninstall helper OffScrubc2r.vbs not found in $($scriptPath)\BRU-uninstall-helpers\"  | Out-Default
                     Write-Warning "See: https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office-ProPlus-Deployment/Deploy-OfficeClickToRun/OffScrubc2r.vbs/" | Out-Default
@@ -878,7 +878,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
             if ( $Script:progslisttoremove -match "McAfee" ) {
                 if ( Test-Path "$($scriptPath)\BRU-uninstall-helpers\mcpr.exe" ) { # updated for mcpr version 10.2.248.0, be sure to update your helpers!
-                    Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\mcpr.exe" -Destination $Script:dest 
+                    Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\mcpr.exe" -Destination $Script:dest
                 } else {
                     Write-Warning "McAfee uninstall helper MCPR.exe (McAfee Consumer Product Removal Tool) not found in $($scriptPath)\BRU-uninstall-helpers\"  | Out-Default
                     Write-Warning "See: http://us.mcafee.com/apps/supporttools/mcpr/mcpr.asp" | Out-Default
@@ -896,7 +896,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
             }
 
             Write-Output "" | Out-Default
-            Write-Verbose "If you are running from a flash drive or removable media and need to remove it, it is now safe to do so." -Verbose 
+            Write-Verbose "If you are running from a flash drive or removable media and need to remove it, it is now safe to do so." -Verbose
 
 
             #return
@@ -910,7 +910,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
 ################# Main Uninstallation Loop ########################################################################
 
-            ForEach( $prog in $Script:progslisttoremove ) { 
+            ForEach( $prog in $Script:progslisttoremove ) {
 
                 $functionAfterUninstallerStarted = $null # no additional cleanup by default unless defined for each specific program
                 $waitForExitAfterUninstallerStarted = 1 # default is to wait for uninstaller to exit before continuing unless modified below, useful if needed to start the uninstaller but not wait on it to exit, such as when using SendKeys to to uninstaller
@@ -934,11 +934,11 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         function VIPAccessAfterUninstallerStarted {
                             $waittimeoutexitcode = waitForProcessToStartOrTimeout 'Au_' 15
                             if ( $waittimeoutexitcode -eq 0 ) {
-                                sleepProgress (@{"Seconds" = 5}) 
+                                sleepProgress (@{"Seconds" = 5})
                                 # Using WASP.dll commands (Windows Automation Snapin for PowerShell)
 
                                 $scriptblock = {
-                                    
+
                                     param($Script:dest)
                                     Start-Sleep -Seconds 1
 
@@ -968,9 +968,9 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         }
                             $functionAfterUninstallerStarted = "VIPAccessAfterUninstallerStarted"
                     } # end if ( $prog.Name -like "VIP Access*" )
-    
 
-                } else { # no QuietUninstallString exists 
+
+                } else { # no QuietUninstallString exists
 
                     if ( $prog.IdentifyingNumber -ne $null `
                          -or ( ($prog.IdentifyingNumber -eq $null) `
@@ -997,7 +997,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             $procnamelist = @('dpcardengine',
                                               'dphostw',
                                               'DpAgent',
-                                              'DPAdminWizard', 
+                                              'DPAdminWizard',
                                               'DPClientWizard',
                                               'sidebar')  # Native Windows sidebar process, stop to remove HP Gadget
                             stopProcesses( $procnamelist )
@@ -1032,7 +1032,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
                         if ( $prog.Name -match "HP Customer Experience Enhancements" ) {
                             function functionHPFeedbackUninstallerStarted {
-                                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "C:\Program Files (x86)\Hewlett-Packard\HP Customer Feedback" 
+                                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "C:\Program Files (x86)\Hewlett-Packard\HP Customer Feedback"
                             }
                             $functionAfterUninstallerStarted = "functionHPFeedbackUninstallerStarted"
                         } # end HP Customer Experience Enhancements msiexec uninstaller
@@ -1060,7 +1060,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         if ( $prog.Name -match "HP Support Assistant" ) { # HPSA msi uninstaller
                             $uninstallarguments = "/x$($id) /qn /norestart UninstallKeepPreferences=TRUE" # Only way to skip prompt asking to save preferences in version 8.1.52.1, also works silently for older and newer versions of HPSA
                             function functionHPSAMSIAfterUninstallerStarted {
-                                Remove-Item "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$($id)" -Force -ErrorAction SilentlyContinue 
+                                Remove-Item "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$($id)" -Force -ErrorAction SilentlyContinue
                                 Remove-Item "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$($id)" -Force -ErrorAction SilentlyContinue
                             }
                             $functionAfterUninstallerStarted = "functionHPSAMSIAfterUninstallerStarted"
@@ -1094,11 +1094,11 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         if ( $prog.Name -match "Adobe Air" ) {
                             $uninstallarguments = "-uninstall"
                         }
-                    
+
                         if ( $prog.Name -match "Dell SupportAssist" ) {
                             $uninstallarguments = "/S"+" "+$uninstallarguments
-                        }     
-                        
+                        }
+
                         if ( $prog.Name -match "Dropbox.*" ) {
                             $uninstallarguments = "/S"+" "+$uninstallarguments
                         }
@@ -1111,7 +1111,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         if ( $prog.Name -match "HP Collaboration Keyboard" ) {
                             Continue
                         }
-			
+
                         # HP ePrint likely has a QuietUninstallString but keeping this in case it doesn't.
                         if ( $prog.Name -match "HP ePrint" ) {
                             $procnamelist = @('HP.DeliveryAndStatus.Desktop.App') # HP ePrint
@@ -1125,7 +1125,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             function HPJumpStartAppsAfterUninstallerStarted {
                                 $waittimeoutexitcode = waitForProcessToStartOrTimeout $uninstallprocname 20
                                 if ( $waittimeoutexitcode -eq 0 ) {
-                                    sleepProgress (@{"Seconds" = 5}) 
+                                    sleepProgress (@{"Seconds" = 5})
                                     # Using WASP.dll commands (Windows Automation Snapin for PowerShell)
 
                                     $scriptblock = {
@@ -1169,13 +1169,13 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             if ( $matches ) {
                                 $id = $matches[0]
                                 Set-Content -Path "$($Script:dest)\hpsetup.iss" -Value "[InstallShield Silent]`r`nVersion=v7.00`r`nFile=Response File`r`n[File Transfer]`r`nOverwrittenReadOnly=NoToAll`r`n[$($id)-DlgOrder]`r`nDlg0=$($id)-SdWelcomeMaint-0`r`nCount=3`r`nDlg1=$($id)-MessageBox-0`r`nDlg2=$($id)-SdFinishReboot-0`r`n[$($id)-SdWelcomeMaint-0]`r`nResult=303`r`n[$($id)-MessageBox-0]`r`nResult=6`r`n[Application]`r`nName=HP Setup`r`nVersion=$($prog.Version)`r`nCompany=Hewlett-Packard Company`r`nLang=0009`r`n[$($id)-SdFinishReboot-0]`r`nResult=1`r`nBootOption=0`r`n"
-                                $uninstallarguments = "-s -SMS -w -clone_wait -f1`"$($Script:dest)\hpsetup.iss`""+" "+"-removeonly" 
+                                $uninstallarguments = "-s -SMS -w -clone_wait -f1`"$($Script:dest)\hpsetup.iss`""+" "+"-removeonly"
                                 function functionHPSetupAfterUninstallerStarted {
                                     Remove-Item "$Script:dest\hpsetup.iss" -Force -Verbose -ErrorAction SilentlyContinue
                                     Remove-Item "$Script:dest\setup.log" -Force -Verbose -ErrorAction SilentlyContinue
                                 }
-                                $functionAfterUninstallerStarted = "functionHPSetupAfterUninstallerStarted"                       
-                            }                    
+                                $functionAfterUninstallerStarted = "functionHPSetupAfterUninstallerStarted"
+                            }
                         } # end HP Setup
 
                         if ( $prog.Name -match "HP Support Assistant" ) {
@@ -1189,7 +1189,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
                             $prog.UninstallString -match $Script:guidmatchstring | Out-Null
                             $id = $matches[0]
-                            
+
                             $ErrorActionPreference = "SilentlyContinue"
 
                             ForEach ( $path in $HPSAuninstallpaths ) {
@@ -1198,7 +1198,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                     Write-Output "Found HPSA Uninstaller: $path" | Out-Default
                                     $uninstallarguments = "/ProductCode $($id) UninstallKeepPreferences=TRUE"
                                     break # just run the first uninstaller that is found, they're all identical copies in multiple locations
-                                }                           
+                                }
                             }
                             if ( !(Test-Path $path) ) {
                                 Write-Warning "No valid HPSA uninstall paths. Search filesystem for UninstallHPSA.exe and update this script with new paths in `$HPSAuninstallpaths" | Out-Default
@@ -1207,7 +1207,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             }
                             $ErrorActionPreference = "Continue"
                             function functionHPSAAfterUninstallerStarted {
-                                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $uninstallpath # Remove exe uninstaller           
+                                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $uninstallpath # Remove exe uninstaller
                                 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "C:\ProgramData\Hewlett-Packard\UninstallHPSA.exe"
                                 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "C:\Program Files\Hewlett-Packard\HP Health Check\Tools\UninstallHPSA.exe"
                                 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "C:\Program Files (x86)\Hewlett-Packard\HP Health Check\Tools\UninstallHPSA.exe"
@@ -1231,12 +1231,12 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                     Remove-Item "$Script:dest\setup.log" -Force -Verbose -ErrorAction SilentlyContinue
                                     Remove-Item -Recurse -Force -Verbose -ErrorAction SilentlyContinue "C:\Program Files\HPCommRecovery\"
                                 }
-                                $functionAfterUninstallerStarted = "functionHPSureConnectAfterUninstallerStarted"                       
+                                $functionAfterUninstallerStarted = "functionHPSureConnectAfterUninstallerStarted"
                             } # end if ( $matches )
                         } # end HP Sure Connect/HP Connection Optimizer
 
                         if ( $prog.Name -match "HP Theft Recovery" `
-                             -or $prog.Name -match "Theft Recovery for HP ProtectTools" ) { 
+                             -or $prog.Name -match "Theft Recovery for HP ProtectTools" ) {
                             # HP Theft Recovery for HP ProtectTools
                             # AKA Computrace
                             $procnamelist = @('CTService') # HP TheftRecovery "Computrace"
@@ -1251,9 +1251,9 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                     Remove-Item "$Script:dest\theftrecovery.iss" -Force -Verbose -ErrorAction SilentlyContinue
                                     Remove-Item "$Script:dest\setup.log" -Force -Verbose -ErrorAction SilentlyContinue
                                 }
-                                $functionAfterUninstallerStarted = "functionHPTheftRecoveryAfterUninstallerStarted"      
+                                $functionAfterUninstallerStarted = "functionHPTheftRecoveryAfterUninstallerStarted"
                                 Stop-Process -Name "CTService" -Force -ErrorAction SilentlyContinue # make sure not running
-                            }                    
+                            }
                         } # end HP Theft Recovery
 
                         if ( $prog.Name -match "HP Velocity" ) {
@@ -1289,7 +1289,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             function LenovoAppExplorerAfterUninstallerStarted {
                                 $waittimeoutexitcode = waitForProcessToStartOrTimeout $uninstallprocname 20
                                 if ( $waittimeoutexitcode -eq 0 ) {
-                                    sleepProgress (@{"Seconds" = 5}) 
+                                    sleepProgress (@{"Seconds" = 5})
                                     # Using WASP.dll commands (Windows Automation Snapin for PowerShell)
 
                                     $scriptblock = {
@@ -1333,7 +1333,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                 Continue # skip if already ran it for a previous McAfee product
                             }
                             # Remove all McAfee consumer products
-                            $MCPRalreadyran = 1                    
+                            $MCPRalreadyran = 1
                             if ( Test-Path "$($Script:dest)\mcpr.exe" ) {
                                 Start-Process "$($Script:dest)\mcpr.exe" # Starting it will extract its contents to a temporary folder
                                 $waittimeoutexitcode = waitForProcessToStartOrTimeout "McClnUI" 45
@@ -1349,7 +1349,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                             Remove-Item "$($env:temp)\MCPR" -Force -Recurse -Verbose -ErrorAction SilentlyContinue
                                             Remove-Item "$($Script:dest)\MCPR.exe" -Force -Verbose -ErrorAction SilentlyContinue
                                         }
-                                        $functionAfterUninstallerStarted = "functionMcAfeeAfterUninstallerStarted"    
+                                        $functionAfterUninstallerStarted = "functionMcAfeeAfterUninstallerStarted"
                                     }
                                 } else {
                                     Write-Warning "Directory $($env:temp)\MCPR does not exist." | Out-Default
@@ -1377,11 +1377,11 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             Write-Output "If it returns exitcode 42 from OffScrubc2r that is normal and means the program was removed sucessfully." | Out-Default
                             function functionMicrosoftOfficeAfterUninstallerStarted {
                                 Remove-Item "C:\Users\Public\Desktop\Microsoft Office 2010.lnk" -Force -Verbose -ErrorAction SilentlyContinue
-                                    
-                            }
-                            $functionAfterUninstallerStarted = "functionMicrosoftOfficeAfterUninstallerStarted"      
 
-                        }                
+                            }
+                            $functionAfterUninstallerStarted = "functionMicrosoftOfficeAfterUninstallerStarted"
+
+                        }
 
                         if ( $prog.Name -like "Microsoft Security Essentials*" ) {
                             $procnamelist = @('epplauncher') # MSE installer provided through Windows Updates
@@ -1422,7 +1422,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                     [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{ENTER}" )
                                     Start-Sleep -Seconds 4
                                     [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{ENTER}" )
-                                    sleepProgress (@{"Seconds" = 180}) 
+                                    sleepProgress (@{"Seconds" = 180})
                                     if ( Get-Process instStub ) {
                                         (New-Object -ComObject WScript.Shell).AppActivate((Get-Process instStub).MainWindowTitle) | Out-Null
                                         [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB}{ENTER}" )
@@ -1440,7 +1440,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
                         # NSIS
                         if ( $prog.UninstallString -match "NSIS" ) {
-                            if ( $prog.Name -match "CyberLink Media.*Suite" ) { 
+                            if ( $prog.Name -match "CyberLink Media.*Suite" ) {
                                 Continue # It will be removed from the other InstallShield Installer for Media Suite
                             }
                             if ( ($prog.Name -match "CyberLink") -and ($Script:progslisttoremove -match "CyberLink Media.*Suite") ) {
@@ -1452,7 +1452,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                         Wait-Process 'Au_' -ErrorAction SilentlyContinue # Wait for it to end
                                     } else {
                                         Write-Output "Process Au_.exe (for the NSIS version of the CyberLink Uninstaller) wasn't running." | Out-Default
-                                    }                           
+                                    }
                                 }
                                 $functionAfterUninstallerStarted = "CyberLinkNSISAfterUninstallerStarted"
                             } else {
@@ -1470,7 +1470,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         # Special Case Non-MSI Uninstallers
 
                     } # end else (if non-msi uninstall)
-                } # end else (no QuietUninstallString) 
+                } # end else (no QuietUninstallString)
 
                 Write-Output "Running:`n$($uninstallpath) $($uninstallarguments)" | Out-Default
                 $ph = $null
@@ -1506,11 +1506,11 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     if ( $proc.ExitCode -ne 0 ) {
                         $a = " $($prog.Name) might not have been removed. Check Programs list if uninstalled. If not reboot and try again or manually uninstall. Some applications give exit codes on uninstallation but still uninstall just fine."
                         if ( $proc.ExitCode -eq 3010 ) {
-                            $a = ", Uninstalled. Reboot Required.`n"    
+                            $a = ", Uninstalled. Reboot Required.`n"
                         }
                         if ( $proc.ExitCode -eq 1605 ) {
-                            $a = ", This action is only valid for products that are currently installed. Program was already removed.`n"    
-                        }                
+                            $a = ", This action is only valid for products that are currently installed. Program was already removed.`n"
+                        }
                         Write-Warning "ExitCode: $($proc.ExitCode)$($a)" | Out-Default
                     } else {
                         Write-Output "Removed $($prog.Name)." | Out-Default
@@ -1536,7 +1536,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
         # Remove non Microsoft Metro/UWP/"Modern" Apps
         if ( ($Script:winVer -gt 6.1 -and $isConfirmed) -and !($Global:isDetectOnlyDryRunSilentOption) ) { # UWP apps only in Win 2012/8+
-            
+
             # NOTE: Get-AppxProvisionedPackage uses PackageName and Get-AppxPackage uses PackageFullName
 
             if ( $Global:UWPappsAUtoRemove ) {
@@ -1544,7 +1544,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                 Write-Output "" | Out-Default
                 Write-Verbose -Verbose "Removing Matching All Users UWP Apps..."
                 Write-Output "" | Out-Default
-                
+
                 # Unpin from start code adapted from: https://superuser.com/questions/1191143/how-to-unpin-windows-10-start-menu-ads-with-powershell
 
                 $Global:UWPappsAUtoRemove | % {
@@ -1563,9 +1563,9 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     }
                 } # end $Global:UWPappsAUtoRemove | %
 
-            } # end if ( $Global:UWPappsAUtoRemove ) 
+            } # end if ( $Global:UWPappsAUtoRemove )
 
-            
+
             if ( $Global:UWPappsProvisionedAppstoRemove ) {
 
                 Write-Output "" | Out-Default
@@ -1586,13 +1586,13 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     } catch {
                         Write-Warning "Unable to Unpin $unpinName from Start Menu." | Out-Default
                     }
-                } # end $Global:UWPappsProvisionedAppstoRemove | % 
+                } # end $Global:UWPappsProvisionedAppstoRemove | %
 
-            } # end if ( $Global:UWPappsProvisionedAppstoRemove ) 
+            } # end if ( $Global:UWPappsProvisionedAppstoRemove )
 
             doWindows10Options # if Win10+ and Option(s) enabled
 
-        } # end if ( $Script:winVer -gt 6.1 -and $isConfirmed ) 
+        } # end if ( $Script:winVer -gt 6.1 -and $isConfirmed )
 
     ###############################################################################################################
 
@@ -1626,7 +1626,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         } # end if ( $isConfirmed )
 
     } else { # end if ( $progslistSelected -ne $null )
- 
+
     #    if ( !($Script:progslisttoremove) -and !($Global:UWPappsAUtoRemove) -and !($Global:UWPappsProvisionedAppstoRemove) ) {
             Write-Output "" | Out-Default
             $nonefoundmessage = "No Bloatware was selected"
@@ -1647,7 +1647,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
             }
         }
 
-        
+
 
         Write-Output "" | Out-Default
         stopTranscript
@@ -1665,7 +1665,7 @@ if (  !($isConfirmed) ) {
 if ( $button -eq "Cancel" -and !($Global:isSilent) ) {
     Write-Output "Removing Log file as removal was canceled or window closed." | Out-Default
     Remove-Item -Force $Script:logfile
-    [Environment]::Exit(4) # User Canceled 
+    [Environment]::Exit(4) # User Canceled
 }
 
 Set-Location $savedPathLocation # Restore working directory path
@@ -1692,8 +1692,8 @@ BEGIN {
         Write-Output "" | Out-Default
         $Global:statusupdate = "Generating and filtering programs list, please wait..."
         Write-Verbose -Verbose "$($Global:statusupdate)`n"
-        
-        if ( !($Global:isSilent) ) {                
+
+        if ( !($Global:isSilent) ) {
             $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
             $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
         }
@@ -1747,7 +1747,7 @@ BEGIN {
             Write-Output "" | Out-Default
             $Global:UWPappsProvisionedApps = Get-AppxProvisionedPackage -Online
             $Global:UWPappsProvisionedApps | % { Write-Output "PackageName: $($_.PackageName)`n" } | Out-Default
-            
+
         } # end if ( $Script:winVer -gt 6.1)
 
         ###############################################################################################################
@@ -1787,9 +1787,9 @@ BEGIN {
 
         ForEach ($item in $proglistwithdupes) {
             $isguid = $item.UninstallString -match $Script:guidmatchstring
-            #add non-guid/non-msi program to list 
+            #add non-guid/non-msi program to list
             if ($item.IdentifyingNumber -eq $null -and !($isguid)) { #non-msi uninstaller
-                $Global:proglist += $item; 
+                $Global:proglist += $item;
             }
             elseif ( $item.IdentifyingNumber -ne $null ) { # if from wmi, add any wmi ones that aren't on the list already or that match against an item on the list that doesn't have msiexec in the uninstallstring (like HPSA)
                 if ( !($Global:proglist -match $item.IdentifyingNumber) `
@@ -1799,7 +1799,7 @@ BEGIN {
             }
             elseif ( $item.UninstallString -ne $null -and $isguid ) { #if guid is an uninstallstring
                   if ( !($Global:proglist -match $matches[0]) ) {
-                    $Global:proglist += $item; 
+                    $Global:proglist += $item;
                   }
             }
         }
@@ -1820,7 +1820,7 @@ BEGIN {
             $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
         }
 
-        $bloatwarelike = ( 
+        $bloatwarelike = (
         # include, in regular expression format
         # must be regex escaped here (and powershell escaped if needed)
         "ActivClient.*",
@@ -1859,6 +1859,7 @@ BEGIN {
         "Multifactor Authentication Client.*",
         "NewBlue\ Video.*",
         "Nitro\ .*",
+        "Norton\ Security",
         "PDF\ Complete.*",
         "Photo\ Gallery",
         "PlayMemories",
@@ -1901,18 +1902,21 @@ BEGIN {
         "Duolingo",
         "EclipseManager",
         "Facebook",
+        "FarmHeroesSaga",
         "FarmVille2CountryEscape",
         "Flipboard",
         "Getstarted",
         "HiddenCityMysteryofShadows",
         "HPJumpStart",
         "HPBusinessSlimKeyboard",
+        "HPPrivacySettings",
+        "HPSupportAssistant",
+        "HPSureShield",
         "iHeartRadio",
         "KeeperSecurity",
         "LenovoCompanion",
         "LenovoCorporation\.LenovoID",
         "LenovoCorporation\.LenovoSettings",
-        "LenovoUtility",
         "LinkedInforWindows",
         "MarchofEmpires",
         "McAfeeSecurity",
@@ -1926,6 +1930,7 @@ BEGIN {
         "MircastView",
         "MyASUS",
         "Netflix",
+        "Norton",
         "OneConnect",
         "PandoraMediaInc",
         "ParadiseBay",
@@ -1957,7 +1962,7 @@ BEGIN {
         "ZuneMusic",
         "ZuneVideo"
         )
-        $bloatwarenotmatch = ( 
+        $bloatwarenotmatch = (
         # skip these, do not remove at all
         # Matches any part of the string. Will be regex escaped later.
         "Dell Command | Update",
@@ -2009,7 +2014,7 @@ BEGIN {
         "WindowsScan",
         "WindowsStore"
         )
-        $specialcasestoremove = ( 
+        $specialcasestoremove = (
         # special cases below will be removed later after the matching list above are removed first
         # VERY IMPORTANT, the order in which these are listed is important as they'll be removed in that order. Some programs need to be removed before others. Matches any part of the string. Will be regex escaped later.
         "CyberLink Media Suite",
@@ -2039,15 +2044,15 @@ BEGIN {
 
             if ( $Global:isIgnoreDefaultSuggestionListSilentOption ) { # no default suggestions if -nd or -ignoredefaults switch
                 [string[]]$bloatwarelike = ""
-                [string[]]$bloatwarenotmatch = "" 
+                [string[]]$bloatwarenotmatch = ""
                 [string[]]$specialcasestoremove = ""
             }
 
             # set include/exclude items to be added after default options (or be the only items to match if previous 'isIgnoreDefaultSuggestionListSilentOption' option is set)
-            if ( $Global:bloatwareIncludeFirstSilentOption ) { 
+            if ( $Global:bloatwareIncludeFirstSilentOption ) {
                 $bloatwarelike = [string[]]$Global:bloatwareIncludeFirstSilentOption + $bloatwarelike
             }
-            if ( $Global:bloatwareExcludeSilentOption ) { 
+            if ( $Global:bloatwareExcludeSilentOption ) {
                 $bloatwarenotmatch = $bloatwarenotmatch + [string[]]$Global:bloatwareExcludeSilentOption
             }
             if ( $Global:bloatwareIncludeLastSilentOption ) { # special cases last
@@ -2078,7 +2083,7 @@ BEGIN {
         ###############################################################################################################
 
         if ( $Script:winVer -gt 6.1) { # UWP apps only in Win 2012/8+
-            
+
             ############## Core regular expression matching magic UWP / Windows Store Programs ##############
 
             $Global:UWPappsAUtoRemove = @( $Global:UWPappsAU | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Global:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Global:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
@@ -2119,7 +2124,7 @@ BEGIN {
         $Global:progslisttodisplay = $Global:proglist | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
         #$Global:orignalprogslisttodisplay = $Global:progslisttodisplay
         # Add in the UWP Win8/10+ apps to the list
-        
+
         if ( $Script:winVer -gt 6.1 ) {
             $Global:UWPappsAUlisttodisplay = $Global:UWPappsAU | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
             $Global:UWPappsProvisionedAppslisttodisplay = $Global:UWPappsProvisionedApps | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
@@ -2142,10 +2147,10 @@ BEGIN {
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "Please make your selection in the GUI list."
 
-            $Global:statusupdate = "Programs list generated and suggested bloatware preselected." 
+            $Global:statusupdate = "Programs list generated and suggested bloatware preselected."
             $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
             $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
-           
+
             Write-Output "" | Out-Default
 
         } else { # if running silently
@@ -2162,17 +2167,17 @@ BEGIN {
     function stopProcesses( [array]$procnamelist ) {
         # Stop processes used by bloatware before removal
         # takes an array of processes and attempts to stop them
-   
+
 	Write-Host "" | Out-Default
         Write-Verbose -Verbose "Stopping processes used by bloatware..."
 
-        ForEach ($procname in $procnamelist) { 
+        ForEach ($procname in $procnamelist) {
             if (Get-Process -Name $procname -ErrorAction SilentlyContinue) {
                 Write-Host "Stopping process: $($procname)" | Out-Default
                 Stop-Process -Name $procname -Force -ErrorAction SilentlyContinue
                 Write-Verbose -Verbose "Process $($procname) stopped."
             }
-            else { 
+            else {
                 if ( (Get-Process $procname -ErrorAction SilentlyContinue) -ne $null ) {
                     Write-Warning "Process $($procname) could not be stopped." | Out-Default
                 }
@@ -2229,7 +2234,7 @@ BEGIN {
                     if ( $key.SystemRestorePointCreationFrequency -ne $null ) {
                         $savedKey = $key
                     }
-                    # Ensure restore point is created ignoring default 1 restore point per day setting in Windows 8+ 
+                    # Ensure restore point is created ignoring default 1 restore point per day setting in Windows 8+
                     Set-ItemProperty -Path $key.PsPath -Name 'SystemRestorePointCreationFrequency' -value '0' -Type DWord
                     $key = Get-Item "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\SystemRestore"
                 }
@@ -2244,7 +2249,7 @@ BEGIN {
 
                     Write-Warning "A System Restore Point could not be created. Ensure the service is running and System Protection is enabled with enough disk space available.`n`n" | Out-Default
                     Write-Host "Do you want to continue (without the Restore Point)?`n" | Out-Default
-                    
+
                     [bool]$isConfirmed = doOptionsRequireConfirmation
                 } # end catch
 
@@ -2258,7 +2263,7 @@ BEGIN {
             return $false # chose not to confirm at first prompt
         } # end if ( $Global:requireSystemRestorePointBeforeRemoval )
         return $true
-    } # end function systemRestorePointIfRequired( ) 
+    } # end function systemRestorePointIfRequired( )
 
 #############
 
@@ -2338,7 +2343,7 @@ BEGIN {
         } else {
             Write-Verbose -Verbose "Press 'Y' to continue or press any other key to stop..."
             $key = [Console]::ReadKey($true)
-            return ($key.Key -eq 'y')         
+            return ($key.Key -eq 'y')
         }
     }
 
@@ -2376,7 +2381,7 @@ BEGIN {
         Write-Host "" | Out-Default
         Write-Verbose -Verbose "Removing Advertisements (Windows ContentDeliveryManager) Ads from exported Layout for new users."
         $startlayout = Get-Content "$($Script:dest)\exported-startlayout.xml" -Raw
-        $noCDMadsstartlayout = $($startlayout -Replace ".*<start:SecondaryTile\ AppUserModelID=`"Microsoft\.Windows\.ContentDeliveryManager.*\ />.*\n.*?")            
+        $noCDMadsstartlayout = $($startlayout -Replace ".*<start:SecondaryTile\ AppUserModelID=`"Microsoft\.Windows\.ContentDeliveryManager.*\ />.*\n.*?")
         Write-Host "" | Out-Default
         Write-Verbose -Verbose "Setting default Start Menu tiles layout for new users only (doesn't apply to any current user or existing account)."
         Set-Content -Path "$($Script:dest)\exported-startlayout-noCDMads.xml" -Value $noCDMadsstartlayout
@@ -2386,7 +2391,7 @@ BEGIN {
         Remove-Item "$($Script:dest)\exported-startlayout-noCDMads.xml" -Force -ErrorAction SilentlyContinue
     }
 
-############# 
+#############
 
     function doWindows10Options( ) {
         if ( $Script:winVer -ge 10 ) {
@@ -2417,7 +2422,7 @@ BEGIN {
         } # end if ( $Script:winVer -ge 10 )
     } # end function doWindows10Options( )
 
-############# 
+#############
 
         # https://stackoverflow.com/questions/40617800/opening-powershell-script-and-hide-command-prompt-but-not-the-gui
         # .Net methods for hiding/showing the console in the background
@@ -2447,7 +2452,7 @@ BEGIN {
         # ForceMinimized = 11
 
         [Console.Window]::ShowWindow($consolePtr, 3)
-    
+
 }
 
     function hideConsole {
@@ -2469,25 +2474,25 @@ BEGIN {
 
     function selectedProgsListviewtoArray( $programsListview ) {
         $progslistSelected = @()
-        $programsListview.items | % { 
+        $programsListview.items | % {
             if ($_.Checked) {
                 # take checked items and put into array of format similar to $Script:progslisttoremove to work with easier
                 $proglistSelectedItem = New-Object –TypeName System.Management.Automation.PSObject
                 $i = 0; $_.SubItems | % {
-                    if ( $proglistviewColumnsArray[$i] -ne "" ) {  
+                    if ( $proglistviewColumnsArray[$i] -ne "" ) {
                         $currentSubItem = $_
                         if ( $currentSubItem.Text -eq "" ) {
                             $proglistselectedItem | Add-Member –MemberType NoteProperty –Name $proglistviewColumnsArray[$i] -Value $null
                         } else {
-                            $proglistselectedItem | Add-Member –MemberType NoteProperty –Name $proglistviewColumnsArray[$i] -Value $currentSubItem.Text   
+                            $proglistselectedItem | Add-Member –MemberType NoteProperty –Name $proglistviewColumnsArray[$i] -Value $currentSubItem.Text
                         }
                     }
                     $i++
                 }
-            
-                
+
+
                 if ( $proglistselectedItem.PackageName ) {
-                    $proglistselectedItem  = $proglistselectedItem | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Select-Object @{Name="DisplayName";Expression={$_.Name}},* -ExcludeProperty Name  
+                    $proglistselectedItem  = $proglistselectedItem | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Select-Object @{Name="DisplayName";Expression={$_.Name}},* -ExcludeProperty Name
                     $progslistSelected += @( $proglistselectedItem | Select-Object * -ExcludeProperty Name )
                 } else {
                     $progslistSelected += @( $proglistselectedItem | Select-Object * -ExcludeProperty DisplayName )
@@ -2520,7 +2525,7 @@ BEGIN {
             $progslisttodisplay = $progslisttodisplay | Where { $_ -notmatch "Microsoft" }
         }
         if ( !($Global:showUWPapps) ) {
-            $progslisttodisplay = $progslisttodisplay | Where { ($_.PackageFullName -eq $null) -and ($_.PackageName -eq $null) }    
+            $progslisttodisplay = $progslisttodisplay | Where { ($_.PackageFullName -eq $null) -and ($_.PackageName -eq $null) }
         }
 
         [int]$Global:numofprogs = @('0',($progslisttodisplay | Measure-Object).Count)[($progslisttodisplay | Measure-Object).Count -gt 0]
@@ -2556,7 +2561,7 @@ BEGIN {
                     ForEach ( $columnheader in $($proglistviewColumnsArray | Select-Object -Skip 1)) {
                         if ( ($item.SubItems[$i].Text) -notmatch [RegEx]::Escape($currentprogslistitemtoshowchecked.$columnheader) ) {
                             Break
-                        }       
+                        }
                         $i++
                     } # end ForEach ( $columnheader in ($proglistviewColumnsArray | Select-Object -Skip 1))
                     if ( ($item.SubItems[$i-1].Text) -notmatch [RegEx]::Escape($currentprogslistitemtoshowchecked.$columnheader) ) {
@@ -2635,7 +2640,7 @@ BEGIN {
             if ( $Numeric ) {
                 return [Double]$_[0]
             } else {
-                $_[0] 
+                $_[0]
             }
         }
         # all information is gathered; perform the sort
@@ -2676,7 +2681,7 @@ BEGIN {
     function isObjectEqual( $refobj, $diffobj ) {
     # takes two objects (assumes both have same properties), returns boolean true if all properties match
         $refobjPropertiesArray = ,@()
-        $refobj.PSObject.Properties | % { $refobjPropertiesArray += $_.Name } 
+        $refobj.PSObject.Properties | % { $refobjPropertiesArray += $_.Name }
         $numofproperties = ($refobjPropertiesArray | Measure-Object).Count
         For ($i=0; $i -le $numofproperties; $i++) {
             if ( $refobj.($refobjPropertiesArray[$i]) -ne $diffobj.($refobjPropertiesArray[$i]) ) {
@@ -2704,13 +2709,13 @@ BEGIN {
     function unZip( $zipfilename ) { # extracts to same directory
     # https://blogs.iis.net/steveschofield/unzip-several-files-with-powershell
     # Works for zip compressed files but not PE SXE Archives (.exe self extracting)
-        $shellApplication = New-Object -Com Shell.Application 
-        $zipPackage = $shellApplication.NameSpace($zipfilename) 
-        $destinationFolder = $shellApplication.NameSpace($zipfilename.DirectoryName) 
-        # CopyHere vOptions Flag # 4 - Do not display a progress dialog box. 
-        # 16 - Respond with "Yes to All" for any dialog box that is displayed. 
-        $destinationFolder.CopyHere($zipPackage.Items(),20) 
-    } 
+        $shellApplication = New-Object -Com Shell.Application
+        $zipPackage = $shellApplication.NameSpace($zipfilename)
+        $destinationFolder = $shellApplication.NameSpace($zipfilename.DirectoryName)
+        # CopyHere vOptions Flag # 4 - Do not display a progress dialog box.
+        # 16 - Respond with "Yes to All" for any dialog box that is displayed.
+        $destinationFolder.CopyHere($zipPackage.Items(),20)
+    }
 
 #############
 
@@ -2729,7 +2734,7 @@ BEGIN {
                 [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
                 static extern bool MoveFileEx(string lpExistingFileName, string lpNewFileName, MoveFileFlags dwFlags);
                 public static bool MarkFileDelete (string sourcefile) {
-                    return MoveFileEx(sourcefile, null, MoveFileFlags.MOVEFILE_DELAY_UNTIL_REBOOT);         
+                    return MoveFileEx(sourcefile, null, MoveFileFlags.MOVEFILE_DELAY_UNTIL_REBOOT);
                 }
             }
 '@
@@ -2835,9 +2840,9 @@ if ( Get-Process McUIHost -ErrorAction SilentlyContinue ) {
         sleepProgress $SleepTime
         $uninstallerstarted = (New-Object -ComObject WScript.Shell).AppActivate((Get-Process McUIHost).MainWindowTitle)
         if ($uninstallerstarted) {
-            [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB} " )    
+            [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB} " )
             $proc.WaitForExit() #check if this exists in function scope
         }
     }
 }
-#>                                
+#>
