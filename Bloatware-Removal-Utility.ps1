@@ -1917,6 +1917,7 @@ BEGIN {
         "LenovoCompanion",
         "LenovoCorporation\.LenovoID",
         "LenovoCorporation\.LenovoSettings",
+        "LenovoUtility",
         "LinkedInforWindows",
         "MarchofEmpires",
         "McAfeeSecurity",
