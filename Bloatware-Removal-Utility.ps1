@@ -264,9 +264,15 @@ if ( (!(Test-Path "$($scriptPath)\$($scriptNameNoExtension).ini") -and (!($Globa
 
 if ( $Global:isSilent ) { # Running silently ignores the saved preferences file
     Write-Output "`nRunning silently using -silent switch."
-    Write-Output "`nFull command line:"
-    Write-Output "$scriptFullLaunchCmd"
-} else {
+}
+
+Write-Output "`nFull command line:"
+Write-Output "$scriptFullLaunchCmd"
+if ($($PSVersionTable.PSVersion.Major) -gt 2) {
+    Write-Output "`$PSCommandPath:"
+    Write-Output $PSCommandPath
+}
+if ( !($Global:isSilent) ) {
     importSettings
 }
 
@@ -574,7 +580,7 @@ if ( !($Global:isSilent) ) {
     $helpAboutMenu.Text = "&About"
     $helpAboutMenu.TextAlign = "MiddleLeft"
     function showHelpAboutMenu($Sender,$e){
-        [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2018.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!`n`nhttp://github.com/arcadesdude/BRU","About Bloatware Removal Utility (BRU)")
+        [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2020.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!`n`nhttp://github.com/arcadesdude/BRU","About Bloatware Removal Utility (BRU)")
     }
     $helpMenu.DropDownItems.Add($helpAboutMenu) | Out-Null
     $helpAboutMenu.Add_Click( { showHelpAboutMenu $helpAboutMenu $EventArgs} )
@@ -762,7 +768,6 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         $progslistSelected = selectedProgsListviewtoArray $programsListview
     }
 
-
     # At this poing, both silent or GUI based selections have been made
     if ( $progslistSelected -ne $null ) {
 
@@ -798,11 +803,11 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         if ( $Script:winVer -gt 6.1 ) {
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "Selected and ordered UWPappsAU (Installed Win8/10+ apps) to be removed:"
-            Write-Output $removeOrderedSelectedUWPappsAU | Out-Default
+            Write-Output $removeOrderedSelectedUWPappsAU | Select-Object Name, Version, Publisher, PackageFullName | Format-List | Out-Default
 
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "Selected and ordered UWPappsProvisionedApps (Provisioned Win8/10+ apps) to be removed:"
-            Write-Output $removeOrderedSelectedUWPappsProvisioned | Out-Default
+            Write-Output $removeOrderedSelectedUWPappsProvisioned | Select-Object DisplayName, Version, PackageName | Format-List | Out-Default
         }
 
         Write-Output "" | Out-Default
@@ -1687,6 +1692,7 @@ END {
 ################################################################################################
 BEGIN {
 
+
     function refreshProgramsList {
 
         Write-Output "" | Out-Default
@@ -1737,7 +1743,8 @@ BEGIN {
             try {
                 $ErrorActionPreference = "SilentlyContinue"
                 $Global:UWPappsAU = Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue
-                $Global:UWPappsAU | % { Write-Output "PackageFullName: $($_.PackageFullName)`n" } | Out-Default
+                $Global:UWPappsAU | % { Write-Output "PackageFullName: $($_.PackageFullName)" } | Out-Default
+                Write-Output "" | Out-Default
             } catch {
                 Write-Warning "Service AppX Deployment Service (AppXSVC) must be running (and not disabled) for Get-AppxPackage to work." | Out-Default
             }
@@ -1746,7 +1753,11 @@ BEGIN {
             Write-Verbose -Verbose "All Users provisioned UWP Win8/Win10+ Apps:"
             Write-Output "" | Out-Default
             $Global:UWPappsProvisionedApps = Get-AppxProvisionedPackage -Online
-            $Global:UWPappsProvisionedApps | % { Write-Output "PackageName: $($_.PackageName)`n" } | Out-Default
+            $Global:UWPappsProvisionedApps | % { Write-Output "PackageName: $($_.PackageName)" } | Out-Default
+            Write-Output "" | Out-Default
+            #Change Property: DisplayName to Name to be consistent
+            $Global:UWPappsProvisionedApps = $Global:UWPappsProvisionedApps | Where-Object { $_.DisplayName } | Add-Member -MemberType AliasProperty -Name Name -Value DisplayName -PassThru | Select-Object Name, Architecture, Build, DisplayName, InstallLocation, LogLevel, LogPath, MajorVersion, MinorVersion, Online, PackageName, Path, PublisherId, Regions, ResourceId, RestartNeeded, Revision, ScratchDirectory, SysDrivePath, Version, WinPath
+
 
         } # end if ( $Script:winVer -gt 6.1)
 
@@ -1809,7 +1820,7 @@ BEGIN {
 
         Write-Output "" | Out-Default
         Write-Verbose -Verbose "List after duplicates removed..."
-        $Global:proglist | Out-Default | Format-List
+        $Global:proglist| Sort-Object Name | Out-Default | Format-List
 
         Write-Output "" | Out-Default
         $Global:statusupdate = "Enumerating suggested bloatware to remove..."
@@ -1875,7 +1886,6 @@ BEGIN {
         "ACGMediaPlayer",
         "ActiproSoftware",
         "AdobeSystemsIncorporated\.AdobePhotoshopExpress",
-        "Asphalt8Airborne",
         "ASUSGIFTBOX",
         "ASUSPCAssistant",
         "AutodeskSketchBook",
@@ -1902,6 +1912,7 @@ BEGIN {
         "Duolingo",
         "EclipseManager",
         "Facebook",
+        "FalloutShelter",
         "FarmHeroesSaga",
         "FarmVille2CountryEscape",
         "Flipboard",
@@ -1925,6 +1936,7 @@ BEGIN {
         "MediaSuiteEssentials",
         "Messaging",
         "Microsoft3DViewer",
+        "Microsoft\.Asphalt",
         "Microsoft\.Office\.Desktop", # Windows Store version of Office
         "MicrosoftOfficeHub",
         "MinecraftUWP",
@@ -1970,6 +1982,7 @@ BEGIN {
         "Dell ControlVault",
         "Dell Update",
         "Dell Digital Delivery",
+        "Dell MD Storage",
         "Dell OpenManage Server Administrator",
         "Dell Unified Wireless Suite",
         "HP Battery Recall Utility",
@@ -2049,30 +2062,82 @@ BEGIN {
                 [string[]]$specialcasestoremove = ""
             }
 
-            # set include/exclude items to be added after default options (or be the only items to match if previous 'isIgnoreDefaultSuggestionListSilentOption' option is set)
             if ( $Global:bloatwareIncludeFirstSilentOption ) {
-                $bloatwarelike = [string[]]$Global:bloatwareIncludeFirstSilentOption + $bloatwarelike
+                $Global:bloatwareIncludeFirstSilentOption = (([string[]]$Global:bloatwareIncludeFirstSilentOption | % { $_ }) -split ',' -join '|').TrimStart('|').TrimEnd('|')
+                #$Global:bloatwareIncludeFirstSilentOption = (([string[]]$Global:bloatwareIncludeFirstSilentOption | % { if ( $_ ) { "$([regex]::Escape($_))" } }) -split ',' -join '|').TrimStart('|').TrimEnd('|')
+
+                Write-Output "Global:bloatwareIncludeFirstSilentOption" | Out-Default
+                Write-Output $([string]($Global:bloatwareIncludeFirstSilentOption)) | Out-Default
+
             }
             if ( $Global:bloatwareExcludeSilentOption ) {
-                $bloatwarenotmatch = $bloatwarenotmatch + [string[]]$Global:bloatwareExcludeSilentOption
+                $Global:bloatwareExcludeSilentOption = (([string[]]$Global:bloatwareExcludeSilentOption | % { if ( $_ ) { "$([regex]::Escape($_))" } }) -split ',' -join '|' ).TrimStart('|').TrimEnd('|')
             }
             if ( $Global:bloatwareIncludeLastSilentOption ) { # special cases last
-                $specialcasestoremove = $specialcasestoremove + [string[]]$Global:bloatwareIncludeLastSilentOption
+                $Global:bloatwareIncludeLastSilentOption = (([string[]]$Global:bloatwareIncludeLastSilentOption | % { if ( $_ ) { "$([regex]::Escape($_))" } }) -split ',' -join '|').TrimStart('|').TrimEnd('|')
             }
         }
 
+        $Global:bloatwarelikesinglestring = (($bloatwarelike | % { if ( !([string]::IsNullorEmpty($_)) ) { $_ } })  -join '|').TrimStart('|').TrimEnd('|') #$bloatware like is not escaped here because it is already regex escaped
+        # Write-Output '$Global:bloatwarelikesinglestring'
+        # Write-Output $Global:bloatwarelikesinglestring
+
+        $Global:specialcasestoremovesinglestring = ((($specialcasestoremove | % { if ( !([string]::IsNullorEmpty($_)) ) { ".*$([regex]::Escape($_)).*$" } }) -join '|') + '|' + $Global:bloatwareIncludeLastSilentOption).TrimStart('|').TrimEnd('|').Trim()
+        # Write-Host "`$Global:specialcasestoremovesinglestring"
+        # Write-Host $Global:specialcasestoremovesinglestring
+
+        $Global:bloatwarenotmatchsinglestring = ((($bloatwarenotmatch | % { if ( !([string]::IsNullorEmpty($_)) ) { ".*$([regex]::Escape($_)).*$" } }) -join '|') + '|' + $Global:bloatwareExcludeSilentOption).TrimStart('|').TrimEnd('|').Trim() # turn into single string for regex excluding
+        # Write-Output '$Global:bloatwarenotmatchsinglestring'
+        # Write-Output $Global:bloatwarenotmatchsinglestring
+
         ############## Core regular expression matching magic regular programs ##############
 
-        $Global:bloatwarenotmatchsinglestring = (($bloatwarenotmatch | % { if ( $_ ) { ".*$([regex]::Escape($_)).*$" } }) -join '|') # turn into single string for regex exluding
-        $Global:specialcasestoremovesinglestring = (($specialcasestoremove | % { if ( $_ ) { ".*$([regex]::Escape($_)).*$" } }) -join '|')
-        $Global:bloatwarelikesinglestring = (($bloatwarelike | % { $_  }) -join '|').TrimStart('|').TrimEnd('|') #$bloatware like is not escaped here
-        $Script:progslisttoremove = @( $Global:proglist | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Global:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Global:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
+        function matchAgainstProglist {
+            Param(
+                [Parameter(Position=0,Mandatory=$true)]
+                    [array]$proglisttomatchagainst,
+                [Parameter(Position=1,Mandatory=$true)]
+                    [string[]]$matchpatterns,
+                [Parameter(Position=2,Mandatory=$false)]
+                    [array]$dontmatchagainstthislist
+            )
 
-        # Add programs (special cases) that have to be removed after other programs to the end of the list
-        $Script:progslisttoremove += @( $specialcasestoremove | % { if ( $_ ) { $currentspecialcase = $_; $Global:proglist -match $_ } } | Where { $_.Name -match $currentspecialcase } | Where { if ([string]::IsNullOrEmpty($Global:bloatwarenotmatchsinglestring)) { $true } else { $_.Name -notmatch $Global:bloatwarenotmatchsinglestring } } )
-        # this only matches each item in specialcasestoremove against the Name in proglist, to exclude when it matches both name and uninstall strings (e.g. 'HP ProtectTools' and the uninstallstring path also contains that text.)
+            $proglisttoreturn = @()
+            ForEach ($matchpattern in ($($matchpatterns -replace "\\\|","%%%%" -split "\|" -replace "%%%%","\|"))) {
+                $proglisttoreturn += @($proglisttomatchagainst | Where {
+                    if ($_.Name -match $matchpattern) {
+                        if (!($_.Name -match $Global:bloatwarenotmatchsinglestring) -and ( !($dontmatchagainstthislist -match $_.Name) ) ) {
+                            $true
+                        }
+                    }
+                })
+            }
 
-        $ignoreDefaultSuggestionListMsg = "Nothing suggested by default because running with -ignoredefaultsuggestions switch."
+            Return $proglisttoreturn
+        } # end function matchAgainstProglist
+
+
+        if (!([string]::IsNullOrEmpty($Global:bloatwareIncludeFirstSilentOption))) {
+            $bloatwareincludefirstdeduped = matchAgainstProglist -proglisttomatchagainst $Global:proglist -matchpatterns $Global:bloatwareIncludeFirstSilentOption
+        }
+        # Write-Host "Bloatware include first deduped:"
+        # Write-Host $bloatwareincludefirstdeduped
+
+        if (!([string]::IsNullOrEmpty($Global:specialcasestoremovesinglestring))) {
+            $specialcasesdeduped = matchAgainstProglist -proglisttomatchagainst $Global:proglist -matchpatterns $Global:specialcasestoremovesinglestring -dontmatchagainstthislist @($bloatwareincludefirstdeduped)
+        }
+        # Write-Host "Special Cases deduped:"
+        # Write-Host $specialcasesdeduped
+
+        if (!([string]::IsNullOrEmpty($Global:bloatwarelikesinglestring))) {
+            $bloatwarelikededuped = matchAgainstProglist -proglisttomatchagainst $Global:proglist -matchpatterns $Global:bloatwarelikesinglestring -dontmatchagainstthislist $(@($bloatwareincludefirstdeduped) + @($specialcasesdeduped))
+        }
+        # Write-Host 'Bloatware like deduped:'
+        # Write-Host $bloatwarelikededuped
+
+        $Script:progslisttoremove = @(@($bloatwareincludefirstdeduped) + @($bloatwarelikededuped) + @($specialcasesdeduped))
+
+        $ignoreDefaultSuggestionListMsg = "No default suggestions given because running with -ignoredefaultsuggestions switch."
 
         Write-Output "" | Out-Default
         Write-Output "Bloatware suggested for removal (non UWP Win8/Win10+ Apps):`n" | Out-Default
@@ -2081,16 +2146,52 @@ BEGIN {
         }
         $Script:progslisttoremove | Out-Default | Format-List
 
+
         ###############################################################################################################
 
         if ( $Script:winVer -gt 6.1) { # UWP apps only in Win 2012/8+
 
             ############## Core regular expression matching magic UWP / Windows Store Programs ##############
 
-            $Global:UWPappsAUtoRemove = @( $Global:UWPappsAU | Where { $Global:bloatwarelikesinglestring } | Where { $_.Name -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Global:specialcasestoremovesinglestring ) { $_.Name -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Global:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
-        #    $Global:UWPappsAUtoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsAU -match $([regex]::escape($_)); } )
-            $Global:UWPappsProvisionedAppstoRemove = @( $Global:UWPappsProvisionedApps | Where { $Global:bloatwarelikesinglestring } | Where { $_.DisplayName -match $Global:bloatwarelikesinglestring } | Where { if ( $Global:bloatwarenotmatchsinglestring -or $Global:specialcasestoremovesinglestring ) { $_.DisplayName -notmatch ($Global:bloatwarenotmatchsinglestring+'|'+$Global:specialcasestoremovesinglestring).TrimStart('|').TrimEnd('|') } else { $true } } )
-        #    $Global:UWPappsProvisionedAppstoRemove += @( $specialcasestoremove | Where { $_ } | % { $Global:UWPappsProvisionedApps -match $([regex]::escape($_)); } )
+            if (!([string]::IsNullOrEmpty($Global:bloatwareIncludeFirstSilentOption))) {
+                $UWPbloatwareincludefirstdeduped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsAU -matchpatterns $Global:bloatwareIncludeFirstSilentOption
+            }
+            # Write-Host "Bloatware include first deduped:"
+            # Write-Host $UWPbloatwareincludefirstdeduped
+
+            if (!([string]::IsNullOrEmpty($Global:specialcasestoremovesinglestring))) {
+                $UWPspecialcasesdeduped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsAU -matchpatterns $Global:specialcasestoremovesinglestring -dontmatchagainstthislist @($UWPbloatwareincludefirstdeduped)
+            }
+            # Write-Host "Special Cases deduped:"
+            # Write-Host $UWPspecialcasesdeduped
+
+            if (!([string]::IsNullOrEmpty($Global:bloatwarelikesinglestring))) {
+                $UWPbloatwarelikededuped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsAU -matchpatterns $Global:bloatwarelikesinglestring -dontmatchagainstthislist $(@($UWPbloatwareincludefirstdeduped) + @($UWPspecialcasesdeduped))
+            }
+            # Write-Host 'Bloatware like deduped:'
+            # Write-Host $UWPbloatwarelikededuped
+
+            $Global:UWPappsAUtoRemove = @(@($UWPbloatwareincludefirstdeduped) + @($UWPbloatwarelikededuped) + @($UWPspecialcasesdeduped))
+
+            if (!([string]::IsNullOrEmpty($Global:bloatwareIncludeFirstSilentOption))) {
+                $UWPProvisionedbloatwareincludefirstdeduped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsProvisionedApps -matchpatterns $Global:bloatwareIncludeFirstSilentOption
+            }
+            # Write-Output "UWPProvisioned Bloatware include first deduped:"
+            # Write-Output $UWPProvisionedbloatwareincludefirstdeduped
+
+            if (!([string]::IsNullOrEmpty($Global:specialcasestoremovesinglestring))) {
+                $UWPProvisionedspecialcasesdeduped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsProvisionedApps -matchpatterns $Global:specialcasestoremovesinglestring -dontmatchagainstthislist @($UWPProvisionedbloatwareincludefirstdeduped)
+            }
+            # Write-Output "UWPProvisioned Special Cases deduped:"
+            # Write-Output $UWPProvisionedspecialcasesdeduped
+
+            if (!([string]::IsNullOrEmpty($Global:bloatwarelikesinglestring))) {
+                $UWPProvisionedbloatwarelikededuped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsProvisionedApps -matchpatterns $Global:bloatwarelikesinglestring -dontmatchagainstthislist $(@($UWPProvisionedbloatwareincludefirstdeduped) + @($UWPProvisionedspecialcasesdeduped))
+            }
+            # Write-Output "UWPProvisioned Bloatware like deduped:"
+            # Write-Output $UWPProvisionedbloatwarelikededuped
+
+            $Global:UWPappsProvisionedAppstoRemove = @(@($UWPProvisionedbloatwareincludefirstdeduped) + @($UWPProvisionedbloatwarelikededuped) + @($UWPProvisionedspecialcasesdeduped))
 
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "All Users UWP Win8/Win10+ Apps Suggested for Removal:"
@@ -2116,7 +2217,7 @@ BEGIN {
         #$Global:UWPappsProvisionedApps exists if ( $Script:winVer -gt 6.1 )
 
 
-        # following 3 variables are modified by the GUI selection list
+        # following 3 variables are modified by the GUI selection list or command line options
         #$Script:progslisttoremove exists
         #$Global:UWPappsAUtoRemove exists if ( $Script:winVer -gt 6.1 )
         #$Global:UWPappsProvisionedAppstoRemove exists if ( $Script:winVer -gt 6.1 )
@@ -2157,7 +2258,7 @@ BEGIN {
         } else { # if running silently
 
             Write-Output "" | Out-Default
-            Write-Output "Total number of programs: $($Global:numofprogs)"
+            Write-Output "Total number of programs: $($Global:numofprogs)" | Out-Default
 
         } # end if ( !($Global:isSilent) )
 
@@ -2169,7 +2270,7 @@ BEGIN {
         # Stop processes used by bloatware before removal
         # takes an array of processes and attempts to stop them
 
-	Write-Host "" | Out-Default
+    Write-Host "" | Out-Default
         Write-Verbose -Verbose "Stopping processes used by bloatware..."
 
         ForEach ($procname in $procnamelist) {
@@ -2454,7 +2555,7 @@ BEGIN {
 
         [Console.Window]::ShowWindow($consolePtr, 3)
 
-}
+    }
 
     function hideConsole {
         $consolePtr = [Console.Window]::GetConsoleWindow()
@@ -2804,7 +2905,9 @@ BEGIN {
             $timer.Stop()
         }
     } # end function killPopup([string] $matchstring)
+
     #>
+
 } # end BEGIN (define functions before PROCESS block of code starts)
 
 ################################################################################################
@@ -2826,22 +2929,22 @@ if ( Get-Process McUIHost -ErrorAction SilentlyContinue ) {
     $uninstallerstarted = (New-Object -ComObject WScript.Shell).AppActivate((Get-Process McUIHost).MainWindowTitle)
     if ($uninstallerstarted) {
         Add-Type -AssemblyName System.Windows.Forms
-        [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB}{TAB}" )
+        [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB}{TAB}")
         Start-Sleep -Seconds 1
-        [System.Windows.Forms.SendKeys]::SendWait(" " )
+        [System.Windows.Forms.SendKeys]::SendWait(" ")
         Start-Sleep -Seconds 1
-        [System.Windows.Forms.SendKeys]::SendWait("{TAB} " )
+        [System.Windows.Forms.SendKeys]::SendWait("{TAB} ")
         Start-Sleep -Seconds 1
-        [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB} " )
+        [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB} ")
         Start-Sleep -Seconds 3
-        [System.Windows.Forms.SendKeys]::SendWait(" " )
+        [System.Windows.Forms.SendKeys]::SendWait(" ")
         Write-Host "Waiting 7 minutes for uninstall to finish before continuing..."
         #Start-Sleep -Seconds 420
         $SleepTime = @{"Minutes" = 7}
         sleepProgress $SleepTime
         $uninstallerstarted = (New-Object -ComObject WScript.Shell).AppActivate((Get-Process McUIHost).MainWindowTitle)
         if ($uninstallerstarted) {
-            [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB} " )
+            [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB} ")"
             $proc.WaitForExit() #check if this exists in function scope
         }
     }
