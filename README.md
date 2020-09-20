@@ -53,7 +53,7 @@ WASP
 HP JumpStart Apps or 'VIP Access' (Comes with old Norton)
 Uses the WASP uninstall helper
 https://wasp.codeplex.com/
-It is a dll file called WASP.dll. 
+It is a dll file called WASP.dll.
 
 To get the WASP.dll file Go to https://archive.codeplex.com/?p=wasp
 
@@ -131,31 +131,35 @@ The following command line options are supported.
 `-nd (or -id or -ignoredefault or -ignoredefaults or -ignoredefaultsuggestions or -nodefaultsuggestions)`
 
   This will not reference the built in suggestions lists so you'll need to use this with `-include, -exclude and/or -includelast (-specialcases)`
-  
+
 `-reboot -rebootafterremoval`
 
   Reboots after running silently. You can check the log (see next section) for details after script runs.
 
 `-include -includefirst`
 
-  This will allow you to choose what you want to include. This comes after the default list if that is used or, if you want to not use the built in suggestions be sure to use the -nd switch (or other above aliases) to prevent the default detection list of including what you don't want. You would include using *Regular Expressions* (unescaped and case-INsensitive). The list to include is separated by | if you need to use | in the program name you can escape it with a preceeding backslash \ Here is an example:
+  This will allow you to choose what you want to include. This comes after the default list if that is used or, if you want to not use the built in suggestions be sure to use the -nd switch (or other above aliases) to prevent the default detection list of including what you don't want. You would include using *Regular Expressions* (escaped and case-INsensitive). The list to include is separated by | if you need to use | in the program name you can escape it with a preceeding backslash \ Here is an example:
 
 `   -include "PROGRAM\ NAME|Something-else|HP\ .*"`
 
 `-exclude -filter`
 
   This will allow you to exclude (not detect) items you don't want to match. This matches text in Regular Expressions but it is escaped in the program so you would enter examples such as:
-  
-`  -exclude "keyboard","driver"`
-  
+
+`  -exclude '"keyboard","driver"'`
+
+If you have more than one item and are using Powershell Version 2, you'll need to wrap the strings into a single quoted string (like in the example above). If you're using newer Powershell versions you don't have to do that and can just put in the items to match in quotes separated by commas without having to wrap the entire string in single quotes.
+
  What you put into each "string" above will turn into a single Regex escaped string like `".*keyboard|driver.*"` That is done automatically by the program so you don't have to escape it here.
 
 `-includelast -specialcases`
 
   This is for programs you want uninstalled AFTER everything else. Useful for stuff that needs to come after other stuff to be removed properly (`*cough*` HP Client Security Manager `*cough*`). This matches text in Regular Expressions but it is escaped in the program so you would enter examples such as:
-  
-`  -includelast "HP Client Security Manager","HP Support Assistant"`
-  
+
+`  -includelast '"HP Client Security Manager","HP Support Assistant"'`
+
+If you have more than one item and are using Powershell Version 2, you'll need to wrap the strings into a single quoted string (like in the example above). If you're using newer Powershell versions you don't have to do that and can just put in the items to match in quotes separated by commas without having to wrap the entire string in single quotes.
+
  What you put into each "string" above will turn into a single Regex escaped string like `".*HP\ Client\ Security\ Manager|HP\ Support\ Assistant.*"` You don't have to do that but it is good to know that happens in the program automatically.
 
 `-win10leaverecommendedappsdownloadon`
@@ -165,7 +169,7 @@ The following command line options are supported.
 `-win10leavestartmenuadson -keepstartads`
 
   This option will keep the Win10 ContentDeliveryManager Ads that appear in the start menu. Not having this option will remove the ads and export the default option so new default accounts won't see them. It doesn't affect existing Windows accounts.
-  
+
 `-norestorepoint -skiprestorepoint -nr`
 
   This skips the Windows Restore Point creation attempt which is on by default.
@@ -177,7 +181,7 @@ The following command line options are supported.
 # Full example from Powershell admin prompt:
 
 Remove All HP apps and do the Client Security Manager and Support Assistant last:
-`.\Bloatware-Removal-Utility.ps1 -silent -nd -includelast "HP Client Security Manager","HP Support Assistant" -include "HP\ .*"`
+`.\Bloatware-Removal-Utility.ps1 -silent -nd -includelast '"HP Client Security Manager","HP Support Assistant" -include "HP\ .*"'`
 
 If you find a setup that works for you you can modify the batch script to specify the options. The current batch script will also run the streams.exe program if you've included it in the uninstall helpers folder to remove the download zone information from the PS1/VBS/BAT/EXE files so Windows SmartScreen doesn't stop the script from running when launching.
 
@@ -191,6 +195,18 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+09/20/2020
+- Fixed Matching issues. Rewrote core matching and fixed out of order or match/not match issues with command line options.
+- Updated Inclusion/Exclusion default suggestions.
+- Excluded "Dell MD Storage" from default suggestions
+- Added "HPSureShield" UWP app to suggested apps
+- Added "HPSupportAssistant" UWP app to suggested apps
+- Added "HPPrivacySettings" UWP app to suggested apps
+- Added "FarmHeroesSaga" UWP app to suggested apps
+- Added "Norton" UWP app to suggested apps
+- Added "Norton Security" UWP app to suggested apps
+- Minor display fixes
+
 01/28/2020
 - Added LenovoUtility (Vantage) UWP app detection to the list of suggested apps to remove.
 
@@ -202,7 +218,7 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 - Fixed https://github.com/arcadesdude/BRU/issues/5 "-includelast or -specialcases not working"
 
 10/17/2019
-- Added "HPInc.EnergyStar" UWP  app to suggested apps
+- Added "HPInc.EnergyStar" UWP app to suggested apps
 - Added "HPPrinterControl" UWP app to suggested apps
 - Added "HPPrivacySettings" UWP app to suggested apps
 - Added "HPSupportAssistant" UWP app to suggested apps
@@ -269,7 +285,7 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 - Added Screenshot of script running/removing bloatware
 
 
-2/28/2018 
+2/28/2018
 - Added "SpotifyAB" UWP app to suggested apps
 - Added "CaesarsSlotsFreeCasino" UWP app to suggested apps
 - Added "DisneyMagicKingdoms" UWP app to suggested apps
