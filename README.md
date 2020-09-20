@@ -181,7 +181,7 @@ If you have more than one item and are using Powershell Version 2, you'll need t
 # Full example from Powershell admin prompt:
 
 Remove All HP apps and do the Client Security Manager and Support Assistant last:
-`.\Bloatware-Removal-Utility.ps1 -silent -nd -includelast '"HP Client Security Manager","HP Support Assistant" -include "HP\ .*"'`
+`.\Bloatware-Removal-Utility.ps1 -silent -nd -includelast '"HP Client Security Manager","HP Support Assistant"' -include '"HP\ .*"'`
 
 If you find a setup that works for you you can modify the batch script to specify the options. The current batch script will also run the streams.exe program if you've included it in the uninstall helpers folder to remove the download zone information from the PS1/VBS/BAT/EXE files so Windows SmartScreen doesn't stop the script from running when launching.
 
