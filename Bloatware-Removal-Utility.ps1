@@ -2944,7 +2944,7 @@ if ( Get-Process McUIHost -ErrorAction SilentlyContinue ) {
         sleepProgress $SleepTime
         $uninstallerstarted = (New-Object -ComObject WScript.Shell).AppActivate((Get-Process McUIHost).MainWindowTitle)
         if ($uninstallerstarted) {
-            [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB} ")"
+            [System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB} ")
             $proc.WaitForExit() #check if this exists in function scope
         }
     }
