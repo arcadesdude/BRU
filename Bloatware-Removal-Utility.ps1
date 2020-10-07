@@ -2064,10 +2064,11 @@ BEGIN {
 
             if ( $Global:bloatwareIncludeFirstSilentOption ) {
                 $Global:bloatwareIncludeFirstSilentOption = (([string[]]$Global:bloatwareIncludeFirstSilentOption | % { $_ }) -split ',' -join '|').TrimStart('|').TrimEnd('|')
+                $Global:bloatwareIncludeFirstSilentOption = $Global:bloatwareIncludeFirstSilentOption -Replace '"',''
                 #$Global:bloatwareIncludeFirstSilentOption = (([string[]]$Global:bloatwareIncludeFirstSilentOption | % { if ( $_ ) { "$([regex]::Escape($_))" } }) -split ',' -join '|').TrimStart('|').TrimEnd('|')
 
-                Write-Output "Global:bloatwareIncludeFirstSilentOption" | Out-Default
-                Write-Output $([string]($Global:bloatwareIncludeFirstSilentOption)) | Out-Default
+                #Write-Host "Global:bloatwareIncludeFirstSilentOption" | Out-Default
+                #Write-Host $([string]($Global:bloatwareIncludeFirstSilentOption)) | Out-Default
 
             }
             if ( $Global:bloatwareExcludeSilentOption ) {
@@ -2079,16 +2080,16 @@ BEGIN {
         }
 
         $Global:bloatwarelikesinglestring = (($bloatwarelike | % { if ( !([string]::IsNullorEmpty($_)) ) { $_ } })  -join '|').TrimStart('|').TrimEnd('|') #$bloatware like is not escaped here because it is already regex escaped
-        # Write-Output '$Global:bloatwarelikesinglestring'
-        # Write-Output $Global:bloatwarelikesinglestring
+        #Write-Host '$Global:bloatwarelikesinglestring'
+        #Write-Host $Global:bloatwarelikesinglestring
 
         $Global:specialcasestoremovesinglestring = ((($specialcasestoremove | % { if ( !([string]::IsNullorEmpty($_)) ) { ".*$([regex]::Escape($_)).*$" } }) -join '|') + '|' + $Global:bloatwareIncludeLastSilentOption).TrimStart('|').TrimEnd('|').Trim()
-        # Write-Host "`$Global:specialcasestoremovesinglestring"
-        # Write-Host $Global:specialcasestoremovesinglestring
+        #Write-Host "`$Global:specialcasestoremovesinglestring"
+        #Write-Host $Global:specialcasestoremovesinglestring
 
         $Global:bloatwarenotmatchsinglestring = ((($bloatwarenotmatch | % { if ( !([string]::IsNullorEmpty($_)) ) { ".*$([regex]::Escape($_)).*$" } }) -join '|') + '|' + $Global:bloatwareExcludeSilentOption).TrimStart('|').TrimEnd('|').Trim() # turn into single string for regex excluding
-        # Write-Output '$Global:bloatwarenotmatchsinglestring'
-        # Write-Output $Global:bloatwarenotmatchsinglestring
+        #Write-Host '$Global:bloatwarenotmatchsinglestring'
+        #Write-Host $Global:bloatwarenotmatchsinglestring
 
         ############## Core regular expression matching magic regular programs ##############
 
@@ -2105,35 +2106,46 @@ BEGIN {
             $proglisttoreturn = @()
             ForEach ($matchpattern in ($($matchpatterns -replace "\\\|","%%%%" -split "\|" -replace "%%%%","\|"))) {
                 $proglisttoreturn += @($proglisttomatchagainst | Where {
+
                     if ($_.Name -match $matchpattern) {
-                        if (!($_.Name -match $Global:bloatwarenotmatchsinglestring) -and ( !($dontmatchagainstthislist -match $_.Name) ) ) {
+
+                        #Write-Host "`$_.Name: $(($_).Name)"
+                        #Write-Host "Matchpattern: $matchpattern"
+
+                        # Current name matches against list now check for any conditions to invalidate the match (don't match against the other list supplied or against the global not match list (which will be empty if not keeping default suggestions list))
+                        if ( ($_.Name -match $Global:bloatwarenotmatchsinglestring) -and (!([string]::IsNullorEmpty($Global:bloatwarenotmatchsinglestring))) ) {
+                            $false
+                        } elseif ( ($dontmatchagainstthislist -match $_.Name) -and (!([string]::IsNullorEmpty($dontmatchagainstthislist))) ) {
+                            $false
+                        } else {
                             $true
                         }
+
                     }
-                })
+                }) # End of where filtering the proglisttomatchagainst
             }
 
             Return $proglisttoreturn
         } # end function matchAgainstProglist
 
-
+""
         if (!([string]::IsNullOrEmpty($Global:bloatwareIncludeFirstSilentOption))) {
             $bloatwareincludefirstdeduped = matchAgainstProglist -proglisttomatchagainst $Global:proglist -matchpatterns $Global:bloatwareIncludeFirstSilentOption
         }
-        # Write-Host "Bloatware include first deduped:"
-        # Write-Host $bloatwareincludefirstdeduped
+        #Write-Host "Bloatware include first deduped:"
+        #Write-Host $bloatwareincludefirstdeduped
 
         if (!([string]::IsNullOrEmpty($Global:specialcasestoremovesinglestring))) {
             $specialcasesdeduped = matchAgainstProglist -proglisttomatchagainst $Global:proglist -matchpatterns $Global:specialcasestoremovesinglestring -dontmatchagainstthislist @($bloatwareincludefirstdeduped)
         }
-        # Write-Host "Special Cases deduped:"
-        # Write-Host $specialcasesdeduped
+        #Write-Host "Special Cases deduped:"
+        #Write-Host $specialcasesdeduped
 
         if (!([string]::IsNullOrEmpty($Global:bloatwarelikesinglestring))) {
             $bloatwarelikededuped = matchAgainstProglist -proglisttomatchagainst $Global:proglist -matchpatterns $Global:bloatwarelikesinglestring -dontmatchagainstthislist $(@($bloatwareincludefirstdeduped) + @($specialcasesdeduped))
         }
-        # Write-Host 'Bloatware like deduped:'
-        # Write-Host $bloatwarelikededuped
+        #Write-Host 'Bloatware like deduped:'
+        #Write-Host $bloatwarelikededuped
 
         $Script:progslisttoremove = @(@($bloatwareincludefirstdeduped) + @($bloatwarelikededuped) + @($specialcasesdeduped))
 
@@ -2156,40 +2168,40 @@ BEGIN {
             if (!([string]::IsNullOrEmpty($Global:bloatwareIncludeFirstSilentOption))) {
                 $UWPbloatwareincludefirstdeduped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsAU -matchpatterns $Global:bloatwareIncludeFirstSilentOption
             }
-            # Write-Host "Bloatware include first deduped:"
-            # Write-Host $UWPbloatwareincludefirstdeduped
+            #Write-Host "Bloatware include first deduped:"
+            #Write-Host $UWPbloatwareincludefirstdeduped
 
             if (!([string]::IsNullOrEmpty($Global:specialcasestoremovesinglestring))) {
                 $UWPspecialcasesdeduped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsAU -matchpatterns $Global:specialcasestoremovesinglestring -dontmatchagainstthislist @($UWPbloatwareincludefirstdeduped)
             }
-            # Write-Host "Special Cases deduped:"
-            # Write-Host $UWPspecialcasesdeduped
+            #Write-Host "Special Cases deduped:"
+            #Write-Host $UWPspecialcasesdeduped
 
             if (!([string]::IsNullOrEmpty($Global:bloatwarelikesinglestring))) {
                 $UWPbloatwarelikededuped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsAU -matchpatterns $Global:bloatwarelikesinglestring -dontmatchagainstthislist $(@($UWPbloatwareincludefirstdeduped) + @($UWPspecialcasesdeduped))
             }
-            # Write-Host 'Bloatware like deduped:'
-            # Write-Host $UWPbloatwarelikededuped
+            #Write-Host 'Bloatware like deduped:'
+            #Write-Host $UWPbloatwarelikededuped
 
             $Global:UWPappsAUtoRemove = @(@($UWPbloatwareincludefirstdeduped) + @($UWPbloatwarelikededuped) + @($UWPspecialcasesdeduped))
 
             if (!([string]::IsNullOrEmpty($Global:bloatwareIncludeFirstSilentOption))) {
                 $UWPProvisionedbloatwareincludefirstdeduped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsProvisionedApps -matchpatterns $Global:bloatwareIncludeFirstSilentOption
             }
-            # Write-Output "UWPProvisioned Bloatware include first deduped:"
-            # Write-Output $UWPProvisionedbloatwareincludefirstdeduped
+            #Write-Host "UWPProvisioned Bloatware include first deduped:"
+            #Write-Host $UWPProvisionedbloatwareincludefirstdeduped
 
             if (!([string]::IsNullOrEmpty($Global:specialcasestoremovesinglestring))) {
                 $UWPProvisionedspecialcasesdeduped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsProvisionedApps -matchpatterns $Global:specialcasestoremovesinglestring -dontmatchagainstthislist @($UWPProvisionedbloatwareincludefirstdeduped)
             }
-            # Write-Output "UWPProvisioned Special Cases deduped:"
-            # Write-Output $UWPProvisionedspecialcasesdeduped
+            #Write-Host "UWPProvisioned Special Cases deduped:"
+            #Write-Host $UWPProvisionedspecialcasesdeduped
 
             if (!([string]::IsNullOrEmpty($Global:bloatwarelikesinglestring))) {
                 $UWPProvisionedbloatwarelikededuped = matchAgainstProglist -proglisttomatchagainst $Global:UWPappsProvisionedApps -matchpatterns $Global:bloatwarelikesinglestring -dontmatchagainstthislist $(@($UWPProvisionedbloatwareincludefirstdeduped) + @($UWPProvisionedspecialcasesdeduped))
             }
-            # Write-Output "UWPProvisioned Bloatware like deduped:"
-            # Write-Output $UWPProvisionedbloatwarelikededuped
+            #Write-Host "UWPProvisioned Bloatware like deduped:"
+            #Write-Host $UWPProvisionedbloatwarelikededuped
 
             $Global:UWPappsProvisionedAppstoRemove = @(@($UWPProvisionedbloatwareincludefirstdeduped) + @($UWPProvisionedbloatwarelikededuped) + @($UWPProvisionedspecialcasesdeduped))
 
