@@ -3,7 +3,7 @@
 #
 # Bloatware Removal Utility
 # Removes common bloatware from HP, Dell, Lenovo, Sony, Etc
-# Supports Powershell 2+, Windows 7/Server 2008 R2 (Winver 6.1+) and newer - including removing Win8/10+ UWP (metro/modern) Apps.
+# Supports Powershell 3+, Windows 7/Server 2008 R2 (Winver 6.1+) and newer - including removing Win8/10+ UWP (metro/modern) Apps.
 #
 # Reboot before running this script and after running it (if anything is removed)
 #
@@ -1349,10 +1349,21 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                         $uninstallpath = "$($env:temp)\MCPR\mccleanup.exe"
                                         $uninstallarguments = "-silent -p StopServices,MFSY,PEF,MXD,CSP,Sustainability,MOCP,MFP,APPSTATS,Auth,EMproxy,FWdiver,HW,MAS,MAT,MBK,MCPR,McProxy,McSvcHost,VUL,MHN,MNA,MOBK,MPFP,MPFPCU,MPS,SHRED,MPSCU,MQC,MQCCU,MSAD,MSHR,MSK,MSKCU,MWL,NMC,RedirSvc,VS,REMEDIATION,MSC,YAP,TRUEKEY,LAM,RESIDUE"
                                         Write-Output "MCPR may take quite a while to run. Please wait..." | Out-Default
+                                        #unpin McAfee LiveSafe from taskbar
+                                        function UnPinFromTaskbar { param( [string]$appname )
+                                            # must be run from user context (not system)
+                                            Try {
+                                                ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | ? { $_.Name -eq $appname }).Verbs() | ? { $_.Name -like 'Unpin from*' } | % { $_.DoIt() }
+                                            } Catch {
+                                                Write-Output "Did not UnPin $appname, it may not be pinned."
+                                            }
+                                        }
+                                        Start-Sleep -Seconds 4
+                                        UnPinFromTaskbar 'McAfee LiveSafe'
                                         function functionMcAfeeAfterUninstallerStarted {
                                             Set-Location $Script:dest
-                                            Remove-Item "$($env:temp)\MCPR" -Force -Recurse -Verbose -ErrorAction SilentlyContinue
-                                            Remove-Item "$($Script:dest)\MCPR.exe" -Force -Verbose -ErrorAction SilentlyContinue
+                                            Remove-Item "$($env:temp)\MCPR" -Force -Recurse -ErrorAction SilentlyContinue
+                                            Remove-Item "$($Script:dest)\MCPR.exe" -Force -ErrorAction SilentlyContinue
                                         }
                                         $functionAfterUninstallerStarted = "functionMcAfeeAfterUninstallerStarted"
                                     }
@@ -1552,21 +1563,40 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
                 # Unpin from start code adapted from: https://superuser.com/questions/1191143/how-to-unpin-windows-10-start-menu-ads-with-powershell
 
-                $Global:UWPappsAUtoRemove | % {
-                    Write-Output "`nRemoving $($_.Name)`nPackageFullName: $($_.PackageFullName)" | Out-Default
-                    Remove-AppxPackage $_.PackageFullName
+                ForEach ($removeitem in $Global:UWPappsAUtoRemove) {
+
+                    Write-Output "`nRemoving $($removeitem.Name)`nPackageFullName: $($removeitem.PackageFullName)" | Out-Default
+                    try {
+                        $output = Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)" -ErrorAction Stop *>&1
+                    } catch {
+                        # run it again, some OS bug means that it sometimes fails the first time (thanks for the Tip Lenovo!)
+                        try {
+                            $output = Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)" -ErrorAction Stop *>&1
+                        } catch {
+                            try {
+                                $output = Remove-AppxPackage -Package "$($removeitem.PackageFullName)" -ErrorAction Stop *>&1
+                            } catch {
+                            }
+                        }
+                    }
                     Start-Sleep -Seconds 4
                     Write-Output "Unpinning from Start Menu" | Out-Default
-                    $unpinName = $_.Name
+                    $unpinName = $removeitem.Name
                     try {
                         $currentLivetile = ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | Where {$_.Path -match $unpinName})
                         if ( $currentLivetile ) {
-                            $currentLivetile.Verbs() | Where { $_.Name.replace('&','') -match 'Unpin from Start' } | % { $_.DoIt() }
-                        }
+                            try {
+                                $ErrorActionPreference = Stop
+                                $currentLivetile.Verbs() | Where { $_.Name.replace('&','') -match 'Unpin from Start' } | % { $_.DoIt() }
+                                $ErrorActionPreference = SilentlyContinue
+                            } catch {
+                                Start-Sleep -Milliseconds 10
+                            }                        }
                     } catch {
                         Write-Warning "Unable to Unpin $unpinName from Start Menu." | Out-Default
                     }
-                } # end $Global:UWPappsAUtoRemove | %
+                } # end ForEach ($removeitem in $Global:UWPappsAUtoRemove)
+
 
             } # end if ( $Global:UWPappsAUtoRemove )
 
@@ -1577,21 +1607,39 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                 Write-Verbose -Verbose "Removing Matching All Users `'Provisioned`' UWP Apps..."
                 Write-Output "" | Out-Default
 
-                $Global:UWPappsProvisionedAppstoRemove | % {
-                    Write-Output "`nRemoving $($_.DisplayName)`nPackageName: $($_.PackageName)" | Out-Default
-                    Remove-AppxProvisionedPackage -PackageName $_.PackageName -Online | Out-Null
+                ForEach ($removeProvisioneditem in $Global:UWPappsProvisionedAppstoRemove)  {
+
+                    Write-Output "`nRemoving $($removeProvisioneditem.DisplayName)`nPackageName: $($removeProvisioneditem.PackageName)" | Out-Default
+                    try {
+                        $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Stop *>&1
+                    } catch {
+                        try {
+                            $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Stop *>&1
+                        } catch {
+                            try {
+                                $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -ErrorAction Stop *>&1
+                            } catch {
+                            }
+                        }
+                    }
                     Start-Sleep -Seconds 4
                     Write-Output "Unpinning from Start Menu" | Out-Default
-                    $unpinName = $_.DisplayName
+                    $unpinName = $removeProvisioneditem.DisplayName
                     try {
                         $currentLivetile = ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | Where { $_.Path -match $unpinName })
                         if ( $currentLivetile ) {
-                            $currentLivetile.Verbs() | Where { $_.Name.replace('&','') -match 'Unpin from Start' } | % { $_.DoIt() }
+                            try {
+                                $ErrorActionPreference = Stop
+                                $currentLivetile.Verbs() | Where { $_.Name.replace('&','') -match 'Unpin from Start' } | % { $_.DoIt() }
+                                $ErrorActionPreference = SilentlyContinue
+                            } catch {
+                                Start-Sleep -Milliseconds 10
+                            }
                         }
                     } catch {
                         Write-Warning "Unable to Unpin $unpinName from Start Menu." | Out-Default
                     }
-                } # end $Global:UWPappsProvisionedAppstoRemove | %
+                } # end ForEach ($removeProvisioneditem in $Global:UWPappsProvisionedAppstoRemove)
 
             } # end if ( $Global:UWPappsProvisionedAppstoRemove )
 
@@ -1862,7 +1910,7 @@ BEGIN {
         "Energy\ Star",
         "Foxit\ .*",
         "Kaspersky.*",
-        "^Lenovo\ .*",
+        "Lenovo",
         "Message\ Center\ Plus",
         "Microsoft\ Security\ Client",
         "Microsoft\ Security\ Essentials",
@@ -1937,6 +1985,7 @@ BEGIN {
         "Messaging",
         "Microsoft3DViewer",
         "Microsoft\.Asphalt",
+        "Microsoft\.Getstarted",
         "Microsoft\.Office\.Desktop", # Windows Store version of Office
         "MicrosoftOfficeHub",
         "MinecraftUWP",
@@ -1990,6 +2039,7 @@ BEGIN {
         "HP Pen Control", # stylus driver
         "HP USB Audio", # docking station audio driver
         "Lenovo Patch Utility",
+        "Lenovo System Update",
         "Lenovo USB",
         "NetExtender",
         "Touchpad",
@@ -2112,7 +2162,6 @@ BEGIN {
                         #Write-Host "`$_.Name: $(($_).Name)"
                         #Write-Host "Matchpattern: $matchpattern"
 
-                        # Current name matches against list now check for any conditions to invalidate the match (don't match against the other list supplied or against the global not match list (which will be empty if not keeping default suggestions list))
                         if ( ($_.Name -match $Global:bloatwarenotmatchsinglestring) -and (!([string]::IsNullorEmpty($Global:bloatwarenotmatchsinglestring))) ) {
                             $false
                         } elseif ( ($dontmatchagainstthislist -match $_.Name) -and (!([string]::IsNullorEmpty($dontmatchagainstthislist))) ) {
@@ -2122,7 +2171,7 @@ BEGIN {
                         }
 
                     }
-                }) # End of where filtering the proglisttomatchagainst
+                })
             }
 
             Return $proglisttoreturn
@@ -2242,8 +2291,8 @@ BEGIN {
         if ( $Script:winVer -gt 6.1 ) {
             $Global:UWPappsAUlisttodisplay = $Global:UWPappsAU | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
             $Global:UWPappsProvisionedAppslisttodisplay = $Global:UWPappsProvisionedApps | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
-            $Global:progslisttodisplay += $Global:UWPappsAUlisttodisplay
-            $Global:progslisttodisplay += $Global:UWPappsProvisionedAppslisttodisplay
+            $Global:progslisttodisplay = @($Global:progslisttodisplay) + @($Global:UWPappsAUlisttodisplay)
+            $Global:progslisttodisplay = @($Global:progslisttodisplay) + @($Global:UWPappsProvisionedAppslisttodisplay)
         }
 
         [int]$Global:numofprogs = @('0',($Global:progslisttodisplay | Measure-Object).Count)[($Global:progslisttodisplay | Measure-Object).Count -gt 0]
