@@ -195,6 +195,17 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+03/21/2021
+- Updated comments, haven't been testing Powershell 2 so updated to show support for 3+ (it may still work in 2 but I haven't been testing in it and dropping support for version 2).
+- Updated removing McAfee from taskbar (unpinning) if it was there after McAfee removal. Removed verbose output when deleting the MCPR during McAfee Removal.
+- Fixed some UWP apps not getting removed by adding additional removal and suppressing most removal output (sometimes Win 10 Version 2004 still shows error removing on the 2nd and 3rd attempts when it worked on the first attempt). Apps like Lenovo Vantage are removed correctly on the 2nd removal attempt now (some apps would always fail on first attempt due to Windows bug). Found the fix in a Lenovo uninstall script.
+- Tweaked default suggested uninstall list, Lenovo apps no longer need a space after 'Lenovo' to be considered for the default list.
+- Added Microsoft Getstarted UWP app (Welcome to Windows 'tour')
+- Added "Lenovo System Update" to exclude list by default
+- Fixed/Updated Core regular expression matching again for more consistent include/exclude when using command line options.
+- Added some edge cases error handling when the programs list is very small to not throw an error.
+- Updated README
+
 10/07/2020
 - Fixed Matching issues. Rewrote core matching and fixed issues matching when exclude list blank in silent/cli options.
 
