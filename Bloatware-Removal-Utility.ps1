@@ -871,7 +871,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                 }
             } # end if ( $Script:progslisttoremove -match "HP\ JumpStart\ Apps|VIP\ Access.*|Lenovo\ App\ Explorer" )
 
-            if ( $Script:progslisttoremove -match "Microsoft\ Office" ) {
+            if ( $Script:progslisttoremove -match "Microsoft\ Office|Microsoft\ 365" ) {
                 # Updated OffScrubc23.vbs for 2013/2016: https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office-ProPlus-Deployment/Deploy-OfficeClickToRun/OffScrubc2r.vbs
                 if ( Test-Path "$($scriptPath)\BRU-uninstall-helpers\OffScrubc2r.vbs" ) {
                     Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\OffScrubc2r.vbs" -Destination $Script:dest
@@ -1381,7 +1381,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             }
                         } # end if ( $prog.Name -match "McAfee" )
 
-                        if ( $prog.Name -match "Microsoft\ Office" ) {
+                        if ( $prog.Name -match "Microsoft\ Office|Microsoft\ 365" ) {
                             if ( $microsoftofficeC2Ralreadyran ) {
                                 Write-Output "$($prog.Name) has already been removed." | Out-Default
                                 Continue # skip if already ran it as running the remover once gets all languages/installs
@@ -2099,6 +2099,7 @@ BEGIN {
         "Norton Internet Security",
         "VIP Access",
         "Microsoft Office", # Trial/OEM Versions of MS Office
+        "Microsoft 365",
         "Office.Click-to-Run"
         )
 
