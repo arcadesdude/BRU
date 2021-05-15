@@ -195,6 +195,12 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+05/15/2021
+- Fixed Office 365 detection (MS Calls it Microsoft 365 now) thanks to jduke-halls
+- Changed HP UWP app detection, now targets company prefix of HP (AD2F1837) instead of by individual app names
+- Added UWP not match exclusion for "HPPCHardwareDiagnostics"
+- Updated README
+
 03/21/2021
 - Updated comments, haven't been testing Powershell 2 so updated to show support for 3+ (it may still work in 2 but I haven't been testing in it and dropping support for version 2).
 - Updated removing McAfee from taskbar (unpinning) if it was there after McAfee removal. Removed verbose output when deleting the MCPR during McAfee Removal.

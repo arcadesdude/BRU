@@ -580,7 +580,7 @@ if ( !($Global:isSilent) ) {
     $helpAboutMenu.Text = "&About"
     $helpAboutMenu.TextAlign = "MiddleLeft"
     function showHelpAboutMenu($Sender,$e){
-        [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2020.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!`n`nhttp://github.com/arcadesdude/BRU","About Bloatware Removal Utility (BRU)")
+        [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2021.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!`n`nhttp://github.com/arcadesdude/BRU","About Bloatware Removal Utility (BRU)")
     }
     $helpMenu.DropDownItems.Add($helpAboutMenu) | Out-Null
     $helpAboutMenu.Add_Click( { showHelpAboutMenu $helpAboutMenu $EventArgs} )
@@ -1933,6 +1933,7 @@ BEGIN {
         "3DBuilder",
         "ACGMediaPlayer",
         "ActiproSoftware",
+        "AD2F1837", # All HP UWP apps (except those in the bloatwarenotmatch list below)
         "AdobeSystemsIncorporated\.AdobePhotoshopExpress",
         "ASUSGIFTBOX",
         "ASUSPCAssistant",
@@ -1966,11 +1967,6 @@ BEGIN {
         "Flipboard",
         "Getstarted",
         "HiddenCityMysteryofShadows",
-        "HPJumpStart",
-        "HPBusinessSlimKeyboard",
-        "HPPrivacySettings",
-        "HPSupportAssistant",
-        "HPSureShield",
         "iHeartRadio",
         "KeeperSecurity",
         "LenovoCompanion",
@@ -2059,6 +2055,7 @@ BEGIN {
         "HolographicFirstRun",
         "HoloItemPlayerApp",
         "HoloShell",
+        "HPPCHardwareDiagnostics",
         "Messaging",
         "MicrosoftSolitaireCollection",
         "MicrosoftStickyNotes",
