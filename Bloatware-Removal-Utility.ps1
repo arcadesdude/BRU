@@ -354,6 +354,54 @@ if ( !($Global:isSilent) ) {
     $fileMenu.Text = "&File"
     $fileMenu.TextAlign = "MiddleLeft"
     ###
+    $fileExportMenu = New-Object System.Windows.Forms.ToolStripMenuItem
+    $fileExportMenu.Name = "fileExportMenu"
+    $fileExportMenu.Size = New-Object System.Drawing.Size(152, 22)
+    $fileExportMenu.Text = "&Export Selection..."
+    $fileExportMenu.TextAlign = "MiddleLeft"
+    function doFileExportMenu($Sender,$e){
+        $fileExportSaveDiaglog = New-Object System.Windows.Forms.SaveFileDialog
+        $fileExportSaveDiaglog.FileName = "BRU-Saved-Selection" # Default file name
+        $fileExportSaveDiaglog.InitialDirectory = $Script:dest
+        $fileExportSaveDiaglog.DefaultExt = ".xml" # Default file extension
+        $fileExportSaveDiaglog.Filter = "XML Document (.xml)|*.xml" # Filter files by extension
+        $fileExportSaveDiaglog.OverwritePrompt = $false
+        $result = $fileExportSaveDiaglog.ShowDialog()
+        if ($result) {
+            $selectionExportPath = $fileExportSaveDiaglog.FileName
+            Write-Output "" | Out-Default
+            $Global:statusupdate = "Exporting selection list..."
+            Write-Host $Global:statusupdate | Out-Default
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+            $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+            Start-Sleep -Milliseconds 500
+            $progslistSelectedforExport = selectedProgsListviewtoArray $programsListview
+            if ( $progslistSelectedforExport -ne $null ) {
+                $removeOrderedSelectedListforExport = ,@()
+                # sort $progslistSelectedforExport against $Script:progslisttoremove
+                ForEach ($prog in $Script:progslisttoremove) {
+                    ForEach ( $selectedprog in $progslistSelectedforExport) {
+                        if ( isObjectEqual $selectedprog $prog ) {
+                            $removeOrderedSelectedListforExport += $selectedProg
+                            $progslistSelectedforExport = $progslistSelectedforExport | Where { $_ -ne $selectedProg }
+                        }
+                    }
+                }
+                # add items selected that weren't in progslisttoremove but were selected to $progslistSelectedforExport
+                $removeOrderedSelectedListforExport += $progslistSelectedforExport | Sort-Object UninstallString
+                $removeOrderedSelectedListforExport | Select-Object -Skip 1 | Export-Clixml -Path $selectionExportPath
+                Write-Output "" | Out-Default
+                $Global:statusupdate = "Selection list exported to $($selectionExportPath)"
+                Write-Host $Global:statusupdate | Out-Default
+                $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+                $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+            }
+        }
+    }
+    $fileMenu.DropDownItems.Add($fileExportMenu) | Out-Null
+    $fileExportMenu.Add_Click( { doFileExportMenu $fileExportMenu $EventArgs} )
+
+    ###
     $fileExitMenu = New-Object System.Windows.Forms.ToolStripMenuItem
     $fileExitMenu.Name = "fileExitMenu"
     $fileExitMenu.Size = New-Object System.Drawing.Size(152, 22)
@@ -789,6 +837,11 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
         # add items selected that weren't in progslisttoremove but were selected to $progslistSelected
         $removeOrderedSelectedList += $progslistSelected | Sort-Object UninstallString
+
+
+#TESTING
+BREAK
+
 
         # pull UWP apps out of full list and back into their own variables
         $removeOrderedSelectedUWPappsAU = $removeOrderedSelectedList | Where { $_.PackageFullName }
