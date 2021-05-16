@@ -208,6 +208,7 @@ Be sure to reboot after running this as some programs need a reboot when uninsta
 - Added Feature to save GUI selection list to file and then use that silently. Good for customizing different 'batches' or brands of bloatware for removal.
 - Changed HP UWP app detection, now targets company prefix of HP (AD2F1837) instead of by individual app names
 - Added UWP not match exclusion for "HPPCHardwareDiagnostics"
+- Added back Powershell v2 support (updated BAT file to use STA mode if PSv2 or lower to support dialog boxes and removed * output streams redirector (which is PSv3+ only).
 - Attempt alternate method of suppressing errors when removing UWP apps that are already removed.
 - Updated README
 

@@ -377,6 +377,7 @@ if ( !($Global:isSilent) ) {
     $fileExportMenu.Text = "&Export Selection..."
     $fileExportMenu.TextAlign = "MiddleLeft"
     function doFileExportMenu($Sender,$e){
+        Write-Output "File, Export Selection choosen..." | Out-Default
         $fileExportSaveDiaglog = New-Object System.Windows.Forms.SaveFileDialog
         $fileExportSaveDiaglog.FileName = "BRU-Saved-Selection" # Default file name
         $fileExportSaveDiaglog.InitialDirectory = $Script:dest
@@ -384,7 +385,7 @@ if ( !($Global:isSilent) ) {
         $fileExportSaveDiaglog.Filter = "XML Document (.xml)|*.xml" # Filter files by extension
         $fileExportSaveDiaglog.OverwritePrompt = $false
         $result = $fileExportSaveDiaglog.ShowDialog()
-        if ($result) {
+        if ($result -ne 'Cancel') {
             $selectionExportPath = $fileExportSaveDiaglog.FileName
             Write-Output "" | Out-Default
             $Global:statusupdate = "Exporting selection list..."
@@ -411,13 +412,17 @@ if ( !($Global:isSilent) ) {
                     $removeOrderedSelectedListforExport | Select-Object -Skip 1 | Export-Clixml -Path $selectionExportPath -ErrorAction Stop
                     $Global:statusupdate = "Selection list exported to $($selectionExportPath)"
                 } catch {
-                    $Global:statusupdate = "Failed to export selection list to $($selectionExportPath)"
+                    $Global:statusupdate = "Failed to export selection list to $($selectionExportPath) Check File permissions and free space."
                 }
-                Write-Host $Global:statusupdate | Out-Default
-                $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
-                $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
+            } else {
+                $Global:statusupdate = "Nothing is selected for export."
             }
+        } else {
+            $Global:statusupdate = "No file chosen for export."
         }
+        Write-Host $Global:statusupdate | Out-Default
+        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
+        $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
     }
     $fileMenu.DropDownItems.Add($fileExportMenu) | Out-Null
     $fileExportMenu.Add_Click( { doFileExportMenu $fileExportMenu $EventArgs} )
