@@ -1671,20 +1671,20 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
                     Write-Output "`nRemoving $($removeitem.Name)`nPackageFullName: $($removeitem.PackageFullName)" | Out-Default
                     $EAPSaved = $ErrorActionPreference
-                    $ErrorActionPreference = Stop
+                    $ErrorActionPreference = "Stop"
                     try {
-                        $ErrorActionPreference = Stop
+                        $ErrorActionPreference = "Stop"
                         $output = Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)" -ErrorAction Stop 2>&1
                     } catch {
-                        $ErrorActionPreference = Stop
+                        $ErrorActionPreference = "Stop"
                         # run it again, some OS bug means that it sometimes fails the first time (thanks for the Tip Lenovo!)
                         try {
-                            $ErrorActionPreference = Stop
+                            $ErrorActionPreference = "Stop"
                             $output = Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)" -ErrorAction Stop 2>&1
                         } catch {
-                            $ErrorActionPreference = Stop
+                            $ErrorActionPreference = "Stop"
                             try {
-                                $ErrorActionPreference = Stop
+                                $ErrorActionPreference = "Stop"
                                 $output = Remove-AppxPackage -Package "$($removeitem.PackageFullName)" -ErrorAction Stop 2>&1
                             } catch {
                             }
@@ -1698,7 +1698,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         $currentLivetile = ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | Where {$_.Path -match $unpinName})
                         if ( $currentLivetile ) {
                             try {
-                                $ErrorActionPreference = Stop
+                                $ErrorActionPreference = "Stop"
                                 $currentLivetile.Verbs() | Where { $_.Name.replace('&','') -match 'Unpin from Start' } | % { $_.DoIt() }
                                 $ErrorActionPreference = SilentlyContinue
                             } catch {
@@ -1723,19 +1723,19 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
                     Write-Output "`nRemoving $($removeProvisioneditem.DisplayName)`nPackageName: $($removeProvisioneditem.PackageName)" | Out-Default
                     $EAPSaved = $ErrorActionPreference
-                    $ErrorActionPreference = Stop
+                    $ErrorActionPreference = "Stop"
                     try {
-                        $ErrorActionPreference = Stop
+                        $ErrorActionPreference = "Stop"
                         $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Stop 2>&1
                     } catch {
-                        $ErrorActionPreference = Stop
+                        $ErrorActionPreference = "Stop"
                         try {
-                            $ErrorActionPreference = Stop
+                            $ErrorActionPreference = "Stop"
                             $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Stop 2>&1
                         } catch {
-                            $ErrorActionPreference = Stop
+                            $ErrorActionPreference = "Stop"
                             try {
-                                $ErrorActionPreference = Stop
+                                $ErrorActionPreference = "Stop"
                                 $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -ErrorAction Stop 2>&1
                             } catch {
                             }
@@ -1749,7 +1749,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         $currentLivetile = ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | Where { $_.Path -match $unpinName })
                         if ( $currentLivetile ) {
                             try {
-                                $ErrorActionPreference = Stop
+                                $ErrorActionPreference = "Stop"
                                 $currentLivetile.Verbs() | Where { $_.Name.replace('&','') -match 'Unpin from Start' } | % { $_.DoIt() }
                                 $ErrorActionPreference = SilentlyContinue
                             } catch {
