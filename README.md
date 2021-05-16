@@ -164,7 +164,7 @@ If you have more than one item and are using Powershell Version 2, you'll need t
 
 `-includefile -selectionfile [File Path (default: c:\BRU\BRU-Saved-Selection.xml)]`
 
-  This uses the saved file that is created in the GUI with the 'File, Export Selection' option to create the selection list used when running silently.
+  This uses the saved file that is created in the GUI with the 'File, Export Selection' option to create the selection list file used when running silently.
 
 ![BRU-File-Export-Selection](BRU-4.PNG?raw=true "BRU File Export Selection")
 
