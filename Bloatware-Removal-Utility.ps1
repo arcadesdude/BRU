@@ -3,7 +3,7 @@
 #
 # Bloatware Removal Utility
 # Removes common bloatware from HP, Dell, Lenovo, Sony, Etc
-# Supports Powershell 3+, Windows 7/Server 2008 R2 (Winver 6.1+) and newer - including removing Win8/10+ UWP (metro/modern) Apps.
+# Supports Powershell 2+, Windows 7/Server 2008 R2 (Winver 6.1+) and newer - including removing Win8/10+ UWP (metro/modern) Apps.
 #
 # Reboot before running this script and after running it (if anything is removed)
 #
@@ -95,6 +95,10 @@ end removal
 #
 # -includelast, -specialcases, these will be added after the default matching list and after exclusions are filtered out. Useful for software that needs to go AFTER other software to be removed properly. This list will be parsed in order so you can put what you want to remove in the order it should be removed in.
 #
+# -includefile -selectionfile [File Path (default: c:\BRU\BRU-Saved-Selection.xml)]
+
+#   This uses the saved file that is created in the GUI with the 'File, Export Selection' option to create the selection list used when running silently. If using this includefile option, the options ignoredefaults, include, exclude, includelast (specialcases) are all ignored and not applied. This also skips the default suggestions list. This assumes the file supplied has programs already chosen and ready to remove. Speeds up removal of bloatware for batches of the same selections (i.e. all same model with same installed bloatware).
+#
 # -win10leaverecommendedappsdownloadon, with this option given it will not automatically set the registry keys to stop the suggested auto downloaded UWP Windows10 Store apps (i.e. CandyCrush...etc)
 #
 # -win10leavestartmenuadson, -keepstartads, if this option is give it will NOT set the start menu for new users to get rid of the ContentDeliveryManager Ads. It doesn't affect existing user accounts.
@@ -130,6 +134,10 @@ Param(
         [Parameter(Mandatory=$False)]
             [Alias("includelast", "specialcases")]
             [string[]]$Global:bloatwareIncludeLastSilentOption,
+
+        [Parameter(Mandatory=$False)]
+            [Alias("includefile", "selectionfile")]
+            [string]$Global:usingSavedSelectionFileSilentOption,
 
         [Parameter(Mandatory=$False)]
             [Alias("win10leaverecommendedappsdownloadon")]
@@ -278,6 +286,16 @@ if ( !($Global:isSilent) ) {
 
 # If Running Silently set up options based on the command line options
 if ( $Global:isSilent ) { # -silent always implies no confirmation prompts
+    if ($Global:usingSavedSelectionFileSilentOption) {
+        if (!(Test-Path "$($Global:usingSavedSelectionFileSilentOption)")) {
+            Write-Warning "`nSaved selection file $($Global:usingSavedSelectionFileSilentOption) not found or doesnt exist!"
+            Write-Warning "Please check the filename and provide the full path to the file`nThe default location and filename is (c:\BRU\BRU-Saved-Selection.xml)"
+            Write-Output "" | Out-Default
+            stopTranscript
+            Set-Location $savedPathLocation # Restore working directory path
+            Return
+        }
+    }
     $Global:requireConfirmationBeforeRemoval = $false
     $Global:globalSettings["requireConfirmationBeforeRemoval"] = $Global:requireConfirmationBeforeRemoval
     if ( $Global:isRebootAfterRemovalswitchSilentOption ) {
@@ -311,7 +329,6 @@ For( $i = 0; $i -lt (($Global:globalSettings.Keys).Count); $i++) {
 Write-Output "`n" | Out-Default
 
 # Start GUI Init if not silent
-
 if ( !($Global:isSilent) ) {
     Add-Type -AssemblyName "System.Windows.Forms" | Out-Null
     #[System.Windows.Forms.Application]::EnableVisualStyles()
@@ -319,7 +336,7 @@ if ( !($Global:isSilent) ) {
     $Script:LastColumnClicked = 0
     $Script:LastColumnAscending = $false
 
-    # GUI code based on examples by ZeroSevenCodes, https://www.youtube.com/watch?v=GQSQesbw3B0 ,
+    # GUI code based on examples by ZeroSevenCodes, https://www.youtube.com/watch?v=GQSQesbw3B0
     $mainUI = New-Object System.Windows.Forms.Form
     $mainUI.Text = "Bloatware Removal Utility"
     $mainUI.Size = New-Object System.Drawing.Size(832,528)
@@ -389,9 +406,13 @@ if ( !($Global:isSilent) ) {
                 }
                 # add items selected that weren't in progslisttoremove but were selected to $progslistSelectedforExport
                 $removeOrderedSelectedListforExport += $progslistSelectedforExport | Sort-Object UninstallString
-                $removeOrderedSelectedListforExport | Select-Object -Skip 1 | Export-Clixml -Path $selectionExportPath
-                Write-Output "" | Out-Default
-                $Global:statusupdate = "Selection list exported to $($selectionExportPath)"
+                Write-Host "" | Out-Default
+                try {
+                    $removeOrderedSelectedListforExport | Select-Object -Skip 1 | Export-Clixml -Path $selectionExportPath -ErrorAction Stop
+                    $Global:statusupdate = "Selection list exported to $($selectionExportPath)"
+                } catch {
+                    $Global:statusupdate = "Failed to export selection list to $($selectionExportPath)"
+                }
                 Write-Host $Global:statusupdate | Out-Default
                 $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
                 $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].ToolTipText = $Global:statusupdate
@@ -400,7 +421,6 @@ if ( !($Global:isSilent) ) {
     }
     $fileMenu.DropDownItems.Add($fileExportMenu) | Out-Null
     $fileExportMenu.Add_Click( { doFileExportMenu $fileExportMenu $EventArgs} )
-
     ###
     $fileExitMenu = New-Object System.Windows.Forms.ToolStripMenuItem
     $fileExitMenu.Name = "fileExitMenu"
@@ -776,17 +796,45 @@ if ( !($Global:isSilent) ) {
 
     refreshProgramsList # get default $Script:progslisttoremove
 
+    if ($Global:usingSavedSelectionFileSilentOption) {
+        if (!(Test-Path "$($Global:usingSavedSelectionFileSilentOption)")) {
+            Write-Warning "Saved selection file $($Global:usingSavedSelectionFileSilentOption) not found or doesnt exist!"
+            Write-Warning "Please check the filename and provide the full path to the file`nif not using the default location and filename (c:\BRU\BRU-Saved-Selection.xml)"
+            Write-Output "" | Out-Default
+            stopTranscript
+            Set-Location $savedPathLocation # Restore working directory path
+            Return
+        } else {
+            try {
+                $progslistSelected = Import-CliXml -Path "$($Global:usingSavedSelectionFileSilentOption)" -ErrorAction Stop
+                Write-Output "" | Out-Default
+                Write-Verbose "Using file $($Global:usingSavedSelectionFileSilentOption) for the selection list. Import successful." -Verbose
+                Write-Output "" | Out-Default
+            } catch {
+                Write-Output "" | Out-Default
+                Write-Warning "File $($Global:usingSavedSelectionFileSilentOption) failed to import for the selection list. Import Failed."
+                Write-Output "" | Out-Default
+                stopTranscript
+                Set-Location $savedPathLocation # Restore working directory path
+                Return
+            }
+        }
+    }
+
     $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
 
-    $progslistSelected = @( $Script:progslisttoremove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name )
+    if (!($Global:usingSavedSelectionFileSilentOption)) {
+        $progslistSelected = @( $Script:progslisttoremove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name )
+    }
 
     if ( $Script:winVer -gt 6.1 ) {
 
         $Global:UWPappsAUtoRemove = $Global:UWPappsAUtoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
         $Global:UWPappsProvisionedAppstoRemove = $Global:UWPappsProvisionedAppstoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
-        $progslistSelected += @( $Global:UWPappsAUtoRemove )
-        $progslistSelected += @( $Global:UWPappsProvisionedAppstoRemove )
-
+        if (!($Global:usingSavedSelectionFileSilentOption)) {
+            $progslistSelected += @( $Global:UWPappsAUtoRemove )
+            $progslistSelected += @( $Global:UWPappsProvisionedAppstoRemove )
+        }
     }
 
     [int]$Script:numofSelectedProgs = @('0',($progslistSelected | Measure-Object).Count)[($progslistSelected | Measure-Object).Count -gt 0]
@@ -817,9 +865,10 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
     }
 
     # At this poing, both silent or GUI based selections have been made
+
     if ( $progslistSelected -ne $null ) {
 
-        # $progslistSelectedOriginal = $proglistSelected # save selection?
+        # $progslistSelectedOriginal = $progslistSelected # save selection?
 
         Write-Output "Sorting programs selected in uninstall order..." | Out-Default
 
@@ -836,12 +885,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         }
 
         # add items selected that weren't in progslisttoremove but were selected to $progslistSelected
-        $removeOrderedSelectedList += $progslistSelected | Sort-Object UninstallString
-
-
-#TESTING
-BREAK
-
+        $removeOrderedSelectedList += @(@($progslistSelected | Where { $_.Uninstallstring } | Sort-Object UninstallString) + @($progslistSelected | Where { !($_.Uninstallstring) } | Sort-Object UninstallString )) #split up into two parts then recombined to put the non-msi uninstallers first, then the msi ones last to reduce msi uninstall errors, needed because importing the xml saved selection file has all the properties added to the items already, so this reorders them correctly again.
 
         # pull UWP apps out of full list and back into their own variables
         $removeOrderedSelectedUWPappsAU = $removeOrderedSelectedList | Where { $_.PackageFullName }
@@ -981,7 +1025,8 @@ BREAK
                     $returned = parseUninstallString $proguninstallstring $uninstallstringmatchstring
                     $uninstallpath = $returned[0]
                     $uninstallarguments = $returned[1]
-                    Write-Output "`nUsing QuietUninstallString" | Out-Default
+
+                    Write-Output "`n$($prog.Name) is being removed. (Using QuietUninstallString)" | Out-Default
 
                     # Special Cases when using QuietUninstallString here
 
@@ -1032,12 +1077,12 @@ BREAK
 
                     if ( $prog.IdentifyingNumber -ne $null `
                          -or ( ($prog.IdentifyingNumber -eq $null) `
-                               -and ( $($prog.UninstallString) -match "msiexec" -and $($prog.UninstallString) -match $Script:guidmatchstring )
+                               -and ( $($prog.UninstallString) -match "msiexec" -and $($prog.UninstallString) -match $Global:guidmatchstring ) `
                              ) ) { # it is MSI uninstaller
                         if ( $prog.IdentifyingNumber) {
                            $id = $prog.IdentifyingNumber
                         } else {
-                            $id = $matches[0] # $($prog.UninstallString) -match $Script:guidmatchstring
+                            $id = $matches[0] # $($prog.UninstallString) -match $Global:guidmatchstring
                         }
                         $uninstallpath = "msiexec.exe"
                         $uninstallarguments = "/x$($id) /qn /norestart"
@@ -1145,6 +1190,7 @@ BREAK
 
                         $proguninstallstring = $prog.UninstallString
                         $returned = parseUninstallString $proguninstallstring $uninstallstringmatchstring
+
                         $uninstallpath = $returned[0]
                         $uninstallarguments = $returned[1]
 
@@ -1223,7 +1269,7 @@ BREAK
                         if ( $prog.Name -match "HP Setup" ) {
                             $procnamelist = @('HPTCS')
                             stopProcesses( $procnamelist )
-                            $prog.UninstallString -match $Script:guidmatchstring | Out-Null
+                            $prog.UninstallString -match $Global:guidmatchstring | Out-Null
                             if ( $matches ) {
                                 $id = $matches[0]
                                 Set-Content -Path "$($Script:dest)\hpsetup.iss" -Value "[InstallShield Silent]`r`nVersion=v7.00`r`nFile=Response File`r`n[File Transfer]`r`nOverwrittenReadOnly=NoToAll`r`n[$($id)-DlgOrder]`r`nDlg0=$($id)-SdWelcomeMaint-0`r`nCount=3`r`nDlg1=$($id)-MessageBox-0`r`nDlg2=$($id)-SdFinishReboot-0`r`n[$($id)-SdWelcomeMaint-0]`r`nResult=303`r`n[$($id)-MessageBox-0]`r`nResult=6`r`n[Application]`r`nName=HP Setup`r`nVersion=$($prog.Version)`r`nCompany=Hewlett-Packard Company`r`nLang=0009`r`n[$($id)-SdFinishReboot-0]`r`nResult=1`r`nBootOption=0`r`n"
@@ -1245,7 +1291,7 @@ BREAK
                                                     "C:\Program Files (x86)\Hewlett-Packard\HP Support Framework\UninstallHPSA.exe" )
                             $HPSAuninstallpaths += @( (Get-ChildItem -Recurse "C:\SWSETUP\*\UninstallHPSA.exe").FullName )
 
-                            $prog.UninstallString -match $Script:guidmatchstring | Out-Null
+                            $prog.UninstallString -match $Global:guidmatchstring | Out-Null
                             $id = $matches[0]
 
                             $ErrorActionPreference = "SilentlyContinue"
@@ -1279,7 +1325,7 @@ BREAK
                         if ( $prog.Name -match "HP Sure Connect" -or $prog.Name -match "HP Connection Optimizer" -or $prog.Name -match "HP Wireless Rescue Tool" ) { # Works with version 1.0.0.29 likely newer as well
                             $procnamelist = @('HPCommRecovery') # HP Sure Connect
                             stopProcesses( $procnamelist )
-                            $prog.UninstallString -match $Script:guidmatchstring | Out-Null
+                            $prog.UninstallString -match $Global:guidmatchstring | Out-Null
                             if ( $matches ) {
                                 $id = $matches[0]
                                 Set-Content -Path "$($Script:dest)\hpsureconnect.iss" -Value "[InstallShield Silent]`r`nVersion=v7.00`r`nFile=Response File`r`n[File Transfer]`r`nOverwrittenReadOnly=NoToAll`r`n[$($id)-DlgOrder]`r`nDlg0=$($id)-MessageBox-0`r`nCount=2`r`nDlg1=$($id)-SdFinish-0`r`n[$($id)-MessageBox-0]`r`nResult=6`r`n[Application]`r`nName=$($prog.Name)`r`nVersion=$($prog.Version)`r`nCompany=HP Inc.`r`nLang=0409`r`n[$($id)-SdFinish-0]`r`nResult=1`r`nbOpt1=0`r`nbOpt2=0`r`n"
@@ -1299,7 +1345,7 @@ BREAK
                             # AKA Computrace
                             $procnamelist = @('CTService') # HP TheftRecovery "Computrace"
                             stopProcesses( $procnamelist )
-                            $prog.UninstallString -match $Script:guidmatchstring | Out-Null
+                            $prog.UninstallString -match $Global:guidmatchstring | Out-Null
                             if ( $matches ) {
                                 $id = $matches[0]
                                 Set-Content -Path "$($Script:dest)\theftrecovery.iss" -Value "[$($id)-DlgOrder]`r`nDlg0=$($id)-MessageBox-0`r`nCount=2`r`nDlg1=$($id)-SdFinish-0`r`n[$($id)-MessageBox-0]`r`nResult=6`r`n[$($id)-SdFinish-0]`r`nResult=1`r`nbOpt1=0`r`nbOpt2=0`r`n"
@@ -1619,19 +1665,27 @@ BREAK
                 ForEach ($removeitem in $Global:UWPappsAUtoRemove) {
 
                     Write-Output "`nRemoving $($removeitem.Name)`nPackageFullName: $($removeitem.PackageFullName)" | Out-Default
+                    $EAPSaved = $ErrorActionPreference
+                    $ErrorActionPreference = Stop
                     try {
-                        $output = Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)" -ErrorAction Stop *>&1
+                        $ErrorActionPreference = Stop
+                        $output = Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)" -ErrorAction Stop 2>&1
                     } catch {
+                        $ErrorActionPreference = Stop
                         # run it again, some OS bug means that it sometimes fails the first time (thanks for the Tip Lenovo!)
                         try {
-                            $output = Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)" -ErrorAction Stop *>&1
+                            $ErrorActionPreference = Stop
+                            $output = Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)" -ErrorAction Stop 2>&1
                         } catch {
+                            $ErrorActionPreference = Stop
                             try {
-                                $output = Remove-AppxPackage -Package "$($removeitem.PackageFullName)" -ErrorAction Stop *>&1
+                                $ErrorActionPreference = Stop
+                                $output = Remove-AppxPackage -Package "$($removeitem.PackageFullName)" -ErrorAction Stop 2>&1
                             } catch {
                             }
                         }
                     }
+                    $ErrorActionPreference = $EAPSaved
                     Start-Sleep -Seconds 4
                     Write-Output "Unpinning from Start Menu" | Out-Default
                     $unpinName = $removeitem.Name
@@ -1663,18 +1717,26 @@ BREAK
                 ForEach ($removeProvisioneditem in $Global:UWPappsProvisionedAppstoRemove)  {
 
                     Write-Output "`nRemoving $($removeProvisioneditem.DisplayName)`nPackageName: $($removeProvisioneditem.PackageName)" | Out-Default
+                    $EAPSaved = $ErrorActionPreference
+                    $ErrorActionPreference = Stop
                     try {
-                        $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Stop *>&1
+                        $ErrorActionPreference = Stop
+                        $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Stop 2>&1
                     } catch {
+                        $ErrorActionPreference = Stop
                         try {
-                            $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Stop *>&1
+                            $ErrorActionPreference = Stop
+                            $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Stop 2>&1
                         } catch {
+                            $ErrorActionPreference = Stop
                             try {
-                                $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -ErrorAction Stop *>&1
+                                $ErrorActionPreference = Stop
+                                $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -ErrorAction Stop 2>&1
                             } catch {
                             }
                         }
                     }
+                    $ErrorActionPreference = $EAPSaved
                     Start-Sleep -Seconds 4
                     Write-Output "Unpinning from Start Menu" | Out-Default
                     $unpinName = $removeProvisioneditem.DisplayName
@@ -1894,11 +1956,11 @@ BEGIN {
         ------------------------------------------
         #>
         #Remove duplicates program listings
-        $Script:guidmatchstring = "(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}"
+        $Global:guidmatchstring = "(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}"
         $Global:proglist = @()
 
         ForEach ($item in $proglistwithdupes) {
-            $isguid = $item.UninstallString -match $Script:guidmatchstring
+            $isguid = $item.UninstallString -match $Global:guidmatchstring
             #add non-guid/non-msi program to list
             if ($item.IdentifyingNumber -eq $null -and !($isguid)) { #non-msi uninstaller
                 $Global:proglist += $item;
@@ -1923,9 +1985,15 @@ BEGIN {
         Write-Verbose -Verbose "List after duplicates removed..."
         $Global:proglist| Sort-Object Name | Out-Default | Format-List
 
-        Write-Output "" | Out-Default
-        $Global:statusupdate = "Enumerating suggested bloatware to remove..."
-        Write-Verbose -Verbose "$($Global:statusupdate)`n"
+        if (!($Global:usingSavedSelectionFileSilentOption)) {
+            Write-Output "" | Out-Default
+            $Global:statusupdate = "Enumerating suggested bloatware to remove..."
+            Write-Verbose -Verbose "$($Global:statusupdate)`n"
+        } else {
+            Write-Output "" | Out-Default
+            $Global:statusupdate = "Checking installed list of programs to be used with selection list file..."
+            Write-Verbose -Verbose "$($Global:statusupdate)`n"
+        }
 
         if ( !($Global:isSilent) ) {
             $statusBarTextBox.Panels[$statusBarTextBoxStatusTextIndex].Text = "  "+$Global:statusupdate
@@ -2167,10 +2235,6 @@ BEGIN {
                 $Global:bloatwareIncludeFirstSilentOption = (([string[]]$Global:bloatwareIncludeFirstSilentOption | % { $_ }) -split ',' -join '|').TrimStart('|').TrimEnd('|')
                 $Global:bloatwareIncludeFirstSilentOption = $Global:bloatwareIncludeFirstSilentOption -Replace '"',''
                 #$Global:bloatwareIncludeFirstSilentOption = (([string[]]$Global:bloatwareIncludeFirstSilentOption | % { if ( $_ ) { "$([regex]::Escape($_))" } }) -split ',' -join '|').TrimStart('|').TrimEnd('|')
-
-                #Write-Host "Global:bloatwareIncludeFirstSilentOption" | Out-Default
-                #Write-Host $([string]($Global:bloatwareIncludeFirstSilentOption)) | Out-Default
-
             }
             if ( $Global:bloatwareExcludeSilentOption ) {
                 $Global:bloatwareExcludeSilentOption = (([string[]]$Global:bloatwareExcludeSilentOption | % { if ( $_ ) { "$([regex]::Escape($_))" } }) -split ',' -join '|' ).TrimStart('|').TrimEnd('|')
@@ -2228,7 +2292,6 @@ BEGIN {
             Return $proglisttoreturn
         } # end function matchAgainstProglist
 
-""
         if (!([string]::IsNullOrEmpty($Global:bloatwareIncludeFirstSilentOption))) {
             $bloatwareincludefirstdeduped = matchAgainstProglist -proglisttomatchagainst $Global:proglist -matchpatterns $Global:bloatwareIncludeFirstSilentOption
         }
@@ -2251,13 +2314,14 @@ BEGIN {
 
         $ignoreDefaultSuggestionListMsg = "No default suggestions given because running with -ignoredefaultsuggestions switch."
 
-        Write-Output "" | Out-Default
-        Write-Output "Bloatware suggested for removal (non UWP Win8/Win10+ Apps):`n" | Out-Default
-        if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionListSilentOption ) {
-            Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
+        if (!($Global:usingSavedSelectionFileSilentOption)) {
+            Write-Output "" | Out-Default
+            Write-Output "Bloatware suggested for removal (non UWP Win8/Win10+ Apps):`n" | Out-Default
+            if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionListSilentOption ) {
+                Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
+            }
+            $Script:progslisttoremove | Out-Default | Format-List
         }
-        $Script:progslisttoremove | Out-Default | Format-List
-
 
         ###############################################################################################################
 
@@ -2305,20 +2369,22 @@ BEGIN {
 
             $Global:UWPappsProvisionedAppstoRemove = @(@($UWPProvisionedbloatwareincludefirstdeduped) + @($UWPProvisionedbloatwarelikededuped) + @($UWPProvisionedspecialcasesdeduped))
 
-            Write-Output "" | Out-Default
-            Write-Verbose -Verbose "All Users UWP Win8/Win10+ Apps Suggested for Removal:"
-            if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionListSilentOption ) {
-                Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
+            if (!($Global:usingSavedSelectionFileSilentOption)) {
+                Write-Output "" | Out-Default
+                Write-Verbose -Verbose "All Users UWP Win8/Win10+ Apps Suggested for Removal:"
+                if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionListSilentOption ) {
+                    Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
+                }
+                Write-Output "" | Out-Default
+                $Global:UWPappsAUtoRemove | % { $_.PackageFullName | Out-Default }
+                Write-Output "" | Out-Default
+                Write-Verbose -Verbose "All Users Provisioned UWP Win8/Win10+ Apps Suggested for Removal:"
+                if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionListSilentOption ) {
+                    Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
+                }
+                Write-Output "" | Out-Default
+                $Global:UWPappsProvisionedAppstoRemove | % { $_.PackageName | Out-Default }
             }
-            Write-Output "" | Out-Default
-            $Global:UWPappsAUtoRemove | % { $_.PackageFullName | Out-Default }
-            Write-Output "" | Out-Default
-            Write-Verbose -Verbose "All Users Provisioned UWP Win8/Win10+ Apps Suggested for Removal:"
-            if ( $Global:isSilent -and $Global:isIgnoreDefaultSuggestionListSilentOption ) {
-                Write-Output $ignoreDefaultSuggestionListMsg | Out-Default
-            }
-            Write-Output "" | Out-Default
-            $Global:UWPappsProvisionedAppstoRemove | % { $_.PackageName | Out-Default }
         }
 
         ###############################################################################################################
@@ -2406,17 +2472,20 @@ BEGIN {
     # then returns the path and the arguments seperately in a form that Start-Process can use
         # Reset $uninstallarguments and $matches each loop iteration
         $uninstallpath = $proguninstallstring
+
         $uninstallarguments = $null
         $matches = $null
 
         $uninstallpath = $uninstallpath -replace "^cmd \/c", ""
         $uninstallpath = $uninstallpath -replace "^RunDll32.*LaunchSetup\ ", ""
         $uninstallpath = $uninstallpath.TrimStart(" ").TrimEnd(" ")
-        $uninstallpath -match $uninstallstringmatchstring | Out-Null
 
-        if ( $matches ) { # only matches if arguments exist
-            $uninstallpath = $matches[1]
-            $uninstallarguments = $matches[2]
+
+        $matched = [RegEx]::Match($uninstallpath, $uninstallstringmatchstring)
+
+        if ( $matched.Success ) { # only matches if arguments exist
+            $uninstallpath = $matched.Groups[1].Value
+            $uninstallarguments = $matched.Groups[2].Value
         }
 
         #remove spaces, single and double quotes from the process path and aurgument list at the begining and end of each
