@@ -140,7 +140,7 @@ The following command line options are supported.
 
   This will allow you to choose what you want to include. This comes after the default list if that is used or, if you want to not use the built in suggestions be sure to use the -nd switch (or other above aliases) to prevent the default detection list of including what you don't want. You would include using *Regular Expressions* (escaped and case-INsensitive). The list to include is separated by | if you need to use | in the program name you can escape it with a preceeding backslash \ Here is an example:
 
-    `-include "PROGRAM\ NAME|Something-else|HP\ .*"`
+    `"-include "PROGRAM\ NAME|Something-else|HP\ .*"`
 
 `-exclude -filter`
 
@@ -164,7 +164,11 @@ If you have more than one item and are using Powershell Version 2, you'll need t
 
 `-includefile -selectionfile [File Path (default: c:\BRU\BRU-Saved-Selection.xml)]`
 
-  This uses the saved file that is created in the GUI with the 'File, Export Selection' option to create the selection list used when running silently. If using this includefile option, the options ignoredefaults, include, exclude, includelast (specialcases) are all ignored and not applied. This also skips the default suggestions list. This assumes the file supplied has programs already chosen and ready to remove. Speeds up removal of bloatware for batches of the same selections (i.e. all same model with same installed bloatware).
+  This uses the saved file that is created in the GUI with the 'File, Export Selection' option to create the selection list used when running silently.
+
+![BRU-File-Export-Selection](BRU-4.PNG?raw=true "BRU File Export Selection")
+
+  If using this includefile option, the options ignoredefaults, include, exclude, includelast (specialcases) are all ignored and not applied. This also skips the default suggestions list. This assumes the file supplied has programs already chosen and ready to remove. Speeds up removal of bloatware for batches of the same selections (i.e. all same model with same installed bloatware).
 
 `-win10leaverecommendedappsdownloadon`
 
