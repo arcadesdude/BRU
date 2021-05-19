@@ -1674,18 +1674,18 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     $ErrorActionPreference = "Stop"
                     try {
                         $ErrorActionPreference = "Stop"
-                        $output = Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)" -ErrorAction Stop 2>&1
+                        [void]$(Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)")
                     } catch {
                         $ErrorActionPreference = "Stop"
                         # run it again, some OS bug means that it sometimes fails the first time (thanks for the Tip Lenovo!)
                         try {
                             $ErrorActionPreference = "Stop"
-                            $output = Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)" -ErrorAction Stop 2>&1
+                            [void]$(Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)")
                         } catch {
                             $ErrorActionPreference = "Stop"
                             try {
                                 $ErrorActionPreference = "Stop"
-                                $output = Remove-AppxPackage -Package "$($removeitem.PackageFullName)" -ErrorAction Stop 2>&1
+                                [void]$(Remove-AppxPackage -Package "$($removeitem.PackageFullName)")
                             } catch {
                             }
                         }
@@ -1726,17 +1726,17 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     $ErrorActionPreference = "Stop"
                     try {
                         $ErrorActionPreference = "Stop"
-                        $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Stop 2>&1
+                        [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers)
                     } catch {
                         $ErrorActionPreference = "Stop"
                         try {
                             $ErrorActionPreference = "Stop"
-                            $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Stop 2>&1
+                            [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers)
                         } catch {
                             $ErrorActionPreference = "Stop"
                             try {
                                 $ErrorActionPreference = "Stop"
-                                $output = Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -ErrorAction Stop 2>&1
+                                [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online)
                             } catch {
                             }
                         }
