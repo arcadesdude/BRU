@@ -1494,7 +1494,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             $uninstallpath = "wscript.exe"
                             $uninstallarguments = " //B //NoLogo `"$($Script:dest)\OffScrubc2r.vbs`" ALL /Quiet /NoCancel"
                             Write-Output "Using OffScrubc2r Office Click To Run (C2R) Remover. This will take a few minutes. Please wait.`n" | Out-Default
-                            Write-Output "If it returns exitcode 42 from OffScrubc2r that is normal and means the program was removed sucessfully." | Out-Default
+                            Write-Output "If it returns exitcode 42 or exitcode 8 from OffScrubc2r that is normal and means the program was removed sucessfully." | Out-Default
                             function functionMicrosoftOfficeAfterUninstallerStarted {
                                 Remove-Item "C:\Users\Public\Desktop\Microsoft Office 2010.lnk" -Force -Verbose -ErrorAction SilentlyContinue
 
@@ -1673,25 +1673,31 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     $EAPSaved = $ErrorActionPreference
                     $ErrorActionPreference = "Stop"
                     try {
-                        $ErrorActionPreference = "Stop"
-                        [void]$(Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)")
+                        if (Get-AppxPackage -AllUsers -Name "$($removeitem.Name)") {
+                            $ErrorActionPreference = "Stop"
+                            [void]$(Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)")
+                        }
                     } catch {
                         $ErrorActionPreference = "Stop"
                         # run it again, some OS bug means that it sometimes fails the first time (thanks for the Tip Lenovo!)
                         try {
                             $ErrorActionPreference = "Stop"
-                            [void]$(Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)")
+                            if (Get-AppxPackage -AllUsers -Name "$($removeitem.Name)") {
+                                [void]$(Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)")
+                            }
                         } catch {
                             $ErrorActionPreference = "Stop"
                             try {
                                 $ErrorActionPreference = "Stop"
-                                [void]$(Remove-AppxPackage -Package "$($removeitem.PackageFullName)")
+                                if (Get-AppxPackage -Name "$($removeitem.Name)") {
+                                    [void]$(Remove-AppxPackage -Package "$($removeitem.PackageFullName)")
+                                }
                             } catch {
                             }
                         }
                     }
                     $ErrorActionPreference = $EAPSaved
-                    Start-Sleep -Seconds 4
+                    #Start-Sleep -Seconds 4
                     Write-Output "Unpinning from Start Menu" | Out-Default
                     $unpinName = $removeitem.Name
                     try {
@@ -1725,24 +1731,30 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     $EAPSaved = $ErrorActionPreference
                     $ErrorActionPreference = "Stop"
                     try {
-                        $ErrorActionPreference = "Stop"
-                        [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers)
+                        if (Get-AppxProvisionedPackage -Online | Where { $_.PackageName -eq "$($removeProvisioneditem.PackageName)" }) {
+                            $ErrorActionPreference = "Stop"
+                            [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers)
+                        }
                     } catch {
                         $ErrorActionPreference = "Stop"
                         try {
-                            $ErrorActionPreference = "Stop"
-                            [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers)
+                            if (Get-AppxProvisionedPackage -Online | Where { $_.PackageName -eq "$($removeProvisioneditem.PackageName)" }) {
+                                $ErrorActionPreference = "Stop"
+                                [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers)
+                            }
                         } catch {
                             $ErrorActionPreference = "Stop"
                             try {
-                                $ErrorActionPreference = "Stop"
-                                [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online)
+                                if (Get-AppxProvisionedPackage -Online | Where { $_.PackageName -eq "$($removeProvisioneditem.PackageName)" }) {
+                                    $ErrorActionPreference = "Stop"
+                                    [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online)
+                                }
                             } catch {
                             }
                         }
                     }
                     $ErrorActionPreference = $EAPSaved
-                    Start-Sleep -Seconds 4
+                    #Start-Sleep -Seconds 4
                     Write-Output "Unpinning from Start Menu" | Out-Default
                     $unpinName = $removeProvisioneditem.DisplayName
                     try {
