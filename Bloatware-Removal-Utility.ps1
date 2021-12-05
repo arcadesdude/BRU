@@ -969,7 +969,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     Copy-Item -Verbose -Path "$($scriptPath)\BRU-uninstall-helpers\WASP.dll" -Destination $Script:dest
                 } else {
                     Write-Warning "WASP uninstall helper WASP.dll (Windows Automation Snapin for PowerShell) not found in $($scriptPath)\BRU-uninstall-helpers\"  | Out-Default
-                    Write-Warning "See: https://wasp.codeplex.com/" | Out-Default
+                    Write-Warning "See: https://web.archive.org/web/20210701003321/https://archive.codeplex.com/?p=wasp" | Out-Default
                 }
             } # end if ( $Script:progslisttoremove -match "HP\ JumpStart\ Apps|VIP\ Access.*|Lenovo\ App\ Explorer" )
 

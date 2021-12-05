@@ -55,15 +55,9 @@ Uses the WASP uninstall helper
 https://wasp.codeplex.com/
 It is a dll file called WASP.dll.
 
-To get the WASP.dll file Go to https://archive.codeplex.com/?p=wasp
+To get the WASP.dll file Download from https://web.archive.org/web/20210701003323/https://codeplexarchive.blob.core.windows.net/archive/projects/WASP/WASP.zip
 
-Click on the download archive button (on that page not here ;)
-![Download Archive at Codeplex](https://user-images.githubusercontent.com/14213202/45259103-dda56000-b392-11e8-9723-bd4cdb59192e.png?raw=true)
-
-In the archive
-https://codeplexarchive.blob.core.windows.net/archive/projects/WASP/WASP.zip
-
-Go to the releases\4\55453160-4bf6-41a4-be7f-7cacc781b9b6 file and rename it .zip
+In the zip file, Go to the releases\4\55453160-4bf6-41a4-be7f-7cacc781b9b6 file and rename it .zip
 
 ![image](https://user-images.githubusercontent.com/14213202/45259074-6ff93400-b392-11e8-8bd4-3514069a80d4.png)
 
@@ -74,7 +68,6 @@ The file you need is inside that as WASP.dll, (ver 1.2.0.0, 42kb).
 ![image](https://user-images.githubusercontent.com/14213202/45259092-bc447400-b392-11e8-8de2-b4e0e0ac7db1.png)
 
 The snap-ins aren't needed just the dll file.
-
 
 
 OffScrub23.vbs
