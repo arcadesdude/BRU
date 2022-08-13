@@ -653,7 +653,7 @@ if ( !($Global:isSilent) ) {
     $helpAboutMenu.Text = "&About"
     $helpAboutMenu.TextAlign = "MiddleLeft"
     function showHelpAboutMenu($Sender,$e){
-        [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) 2021.`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!`n`nhttp://github.com/arcadesdude/BRU","About Bloatware Removal Utility (BRU)")
+        [void][System.Windows.Forms.MessageBox]::Show("Bloatware Removal Utility by Ricky Cobb (c) $((Get-Date).Year).`n`nIntended use for removing bloatware from new`nfactory image systems.`n`nCarefully check the selection list before`nremoving any selected programs.`n`nUse at your own risk!`n`nhttp://github.com/arcadesdude/BRU","About Bloatware Removal Utility (BRU)")
     }
     $helpMenu.DropDownItems.Add($helpAboutMenu) | Out-Null
     $helpAboutMenu.Add_Click( { showHelpAboutMenu $helpAboutMenu $EventArgs} )
@@ -1440,7 +1440,12 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             $functionAfterUninstallerStarted = "LenovoAppExplorerAfterUninstallerStarted"
                         }
 
-                        if ( $prog.Name -match "McAfee" ) {
+                        if ( $prog.Name -match "McAfee Security Scan Plus" ) {
+                            $uninstallarguments = "/S /inner"
+                        }
+
+                        if ( $prog.Name -match "McAfee" -and $prog.Name -notmatch "McAfee Security Scan Plus" ) {
+
                             if ( $MCPRalreadyran ) {
                                 Write-Output "$($prog.Name) has already been removed." | Out-Default
                                 Continue # skip if already ran it for a previous McAfee product
@@ -1450,12 +1455,33 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             if ( Test-Path "$($Script:dest)\mcpr.exe" ) {
                                 Start-Process "$($Script:dest)\mcpr.exe" # Starting it will extract its contents to a temporary folder
                                 $waittimeoutexitcode = waitForProcessToStartOrTimeout "McClnUI" 45
+
+                                $mcprDir = $null
+                                $mcprProcessPath = (Get-Process mcclnui -ErrorAction SilentlyContinue | Select-Object Path).Path
+                                if ($mcprProcessPath) {
+                                    $mcprDir = Split-Path $mcprProcessPath
+                                }
+                                if ($mcprDir) {
+                                    if (!(Test-Path "$($mcprDir)")) {
+                                        $mcprDir = $null
+                                    }
+                                }
+                                if (!($mcprDir)) {
+                                    $recentTempDirs = Get-ChildItem "$($env:temp)" | Where-Object { $_.PSIsContainer -and $_.LastWriteTime -gt (Get-Date).AddHours(-1) }
+                                    $mcprTempDirs = (Get-ChildItem -Recurse $recentTempDirs.FullName -Filter "McClnUI.exe").FullName
+                                    if ($mcprTempDirs) {
+                                        $mcprDirs = Split-Path $mcprTempDirs
+                                    }
+                                    if ($mcprDirs) {
+                                        $mcprDir = ($mcprDirs | Get-Item | Sort-Object LastWriteTime | Select-Object -Last 1).FullName
+                                    }
+                                }
                                 Start-Process "taskkill.exe" -ArgumentList "/im `"McClnUI.exe`" /f"
-                                if ( Test-Path "$($env:temp)\MCPR" ) {
-                                    Set-Location "$($env:temp)\MCPR"
-                                    if ( Test-Path "$($env:temp)\MCPR\mccleanup.exe" ) {
-                                        $uninstallpath = "$($env:temp)\MCPR\mccleanup.exe"
-                                        $uninstallarguments = "-silent -p StopServices,MFSY,PEF,MXD,CSP,Sustainability,MOCP,MFP,APPSTATS,Auth,EMproxy,FWdiver,HW,MAS,MAT,MBK,MCPR,McProxy,McSvcHost,VUL,MHN,MNA,MOBK,MPFP,MPFPCU,MPS,SHRED,MPSCU,MQC,MQCCU,MSAD,MSHR,MSK,MSKCU,MWL,NMC,RedirSvc,VS,REMEDIATION,MSC,YAP,TRUEKEY,LAM,RESIDUE"
+                                if ( Test-Path "$mcprDir" ) {
+                                    Set-Location "$mcprDir"
+                                    if ( Test-Path "$($mcprDir)\mccleanup.exe" ) {
+                                        $uninstallpath = "$($mcprDir)\mccleanup.exe"
+                                        $uninstallarguments = "-p 83D598B28704805D599AE0512AB8066E31DCE48D6BD9691F304FD895B191EECBCD86900CFF18E603CFFE8D7C27F362E53B70ACFDA1D37F101A7CFB3856D2D882BC9078509FAA05370EA70FA186EC44AE3A657B43EC9559FDEF33C6E8AAF0D7BDB71F264D419E66EBCA2045AF9717434E8A4AAE1FA6F7F2A6EE6EE4F37FA199298DDAFF1F1E3124F4837EAA344CA44ADC129C0C9A1C112CA77050705A304AA3428E264FF96942728C839D4B675753DCFED36D95CF1E5FA3F0F8DFA7C5FEF32C481D8160BA8A96CE44BDC1E3B3F3B198456633E83E467775AD0BBF0E8FC09C94150F1F2FE79E13247DD89EF520425269A557765E64EE0F73208A078FCAE244F317CCE7006FBFCB354401D044FF08FBF800477F0BB5415682DE406DF0BADF6624761F76E0EFAB9543BBB924149A64B9BB4A -silent StopServices,MFSY,PEF,MXD,CSP,Sustainability,MOCP,MFP,APPSTATS,Auth,EMproxy,FWdiver,HW,MAS,MAT,MBK,MCPR,McProxy,McSvcHost,VUL,MHN,MNA,MOBK,MPFP,MPFPCU,MPS,SHRED,MPSCU,MQC,MQCCU,MSAD,MSHR,MSK,MSKCU,MWL,NMC,RedirSvc,VS,REMEDIATION,MSC,YAP,TRUEKEY,LAM,PCB,Symlink,SafeConnect,MGS,WMIRemover,RESIDUE"
                                         Write-Output "MCPR may take quite a while to run. Please wait..." | Out-Default
                                         #unpin McAfee LiveSafe from taskbar
                                         function UnPinFromTaskbar { param( [string]$appname )
@@ -1470,13 +1496,13 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                         UnPinFromTaskbar 'McAfee LiveSafe'
                                         function functionMcAfeeAfterUninstallerStarted {
                                             Set-Location $Script:dest
-                                            Remove-Item "$($env:temp)\MCPR" -Force -Recurse -ErrorAction SilentlyContinue
+                                            Remove-Item "$mcprDir" -Force -Recurse -ErrorAction SilentlyContinue
                                             Remove-Item "$($Script:dest)\MCPR.exe" -Force -ErrorAction SilentlyContinue
                                         }
                                         $functionAfterUninstallerStarted = "functionMcAfeeAfterUninstallerStarted"
                                     }
                                 } else {
-                                    Write-Warning "Directory $($env:temp)\MCPR does not exist." | Out-Default
+                                    Write-Warning "No directory in $($env:temp) found with McClnUI.exe." | Out-Default
                                     Write-Warning "Probably low disk space." | Out-Default
                                     Write-Warning "Try clearing room, check write permissions and then manually uninstall $($prog.Name) or run MCPR.exe and reboot." | Out-Default
                                     Continue
