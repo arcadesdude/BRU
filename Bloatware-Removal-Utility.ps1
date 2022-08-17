@@ -1455,6 +1455,19 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             # Remove all McAfee consumer products
                             $MCPRalreadyran = 1
                             if ( Test-Path "$($Script:dest)\mcpr.exe" ) {
+
+                                #read version from file
+                                $mcprVersion = (Get-Item "$($Script:dest)\mcpr.exe" | Select-Object VersionInfo).VersionInfo.ProductVersion
+
+                                $mcprKeys = @{ # key needed to run silently
+                                    "10.4.194.0" = "83D598B28704805D599AE0512AB8066E31DCE48D6BD9691F304FD895B191EECBCD86900CFF18E603CFFE8D7C27F362E53B70ACFDA1D37F101A7CFB3856D2D882BC9078509FAA05370EA70FA186EC44AE3A657B43EC9559FDEF33C6E8AAF0D7BDB71F264D419E66EBCA2045AF9717434E8A4AAE1FA6F7F2A6EE6EE4F37FA199298DDAFF1F1E3124F4837EAA344CA44ADC129C0C9A1C112CA77050705A304AA3428E264FF96942728C839D4B675753DCFED36D95CF1E5FA3F0F8DFA7C5FEF32C481D8160BA8A96CE44BDC1E3B3F3B198456633E83E467775AD0BBF0E8FC09C94150F1F2FE79E13247DD89EF520425269A557765E64EE0F73208A078FCAE244F317CCE7006FBFCB354401D044FF08FBF800477F0BB5415682DE406DF0BADF6624761F76E0EFAB9543BBB924149A64B9BB4A";
+
+                                }
+
+                                if ($mcprVersion) {
+                                    $mcprKey = $mcprKeys[$mcprVersion]
+                                }
+
                                 Start-Process "$($Script:dest)\mcpr.exe" # Starting it will extract its contents to a temporary folder
                                 $waittimeoutexitcode = waitForProcessToStartOrTimeout "McClnUI" 45
 
@@ -1483,7 +1496,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                     Set-Location "$mcprDir"
                                     if ( Test-Path "$($mcprDir)\mccleanup.exe" ) {
                                         $uninstallpath = "$($mcprDir)\mccleanup.exe"
-                                        $uninstallarguments = "-p 83D598B28704805D599AE0512AB8066E31DCE48D6BD9691F304FD895B191EECBCD86900CFF18E603CFFE8D7C27F362E53B70ACFDA1D37F101A7CFB3856D2D882BC9078509FAA05370EA70FA186EC44AE3A657B43EC9559FDEF33C6E8AAF0D7BDB71F264D419E66EBCA2045AF9717434E8A4AAE1FA6F7F2A6EE6EE4F37FA199298DDAFF1F1E3124F4837EAA344CA44ADC129C0C9A1C112CA77050705A304AA3428E264FF96942728C839D4B675753DCFED36D95CF1E5FA3F0F8DFA7C5FEF32C481D8160BA8A96CE44BDC1E3B3F3B198456633E83E467775AD0BBF0E8FC09C94150F1F2FE79E13247DD89EF520425269A557765E64EE0F73208A078FCAE244F317CCE7006FBFCB354401D044FF08FBF800477F0BB5415682DE406DF0BADF6624761F76E0EFAB9543BBB924149A64B9BB4A -silent StopServices,MFSY,PEF,MXD,CSP,Sustainability,MOCP,MFP,APPSTATS,Auth,EMproxy,FWdiver,HW,MAS,MAT,MBK,MCPR,McProxy,McSvcHost,VUL,MHN,MNA,MOBK,MPFP,MPFPCU,MPS,SHRED,MPSCU,MQC,MQCCU,MSAD,MSHR,MSK,MSKCU,MWL,NMC,RedirSvc,VS,REMEDIATION,MSC,YAP,TRUEKEY,LAM,PCB,Symlink,SafeConnect,MGS,WMIRemover,RESIDUE"
+                                        $uninstallarguments = "-p $mcprKey -silent StopServices,MFSY,PEF,MXD,CSP,Sustainability,MOCP,MFP,APPSTATS,Auth,EMproxy,FWdiver,HW,MAS,MAT,MBK,MCPR,McProxy,McSvcHost,VUL,MHN,MNA,MOBK,MPFP,MPFPCU,MPS,SHRED,MPSCU,MQC,MQCCU,MSAD,MSHR,MSK,MSKCU,MWL,NMC,RedirSvc,VS,REMEDIATION,MSC,YAP,TRUEKEY,LAM,PCB,Symlink,SafeConnect,MGS,WMIRemover,RESIDUE"
                                         Write-Output "MCPR may take quite a while to run. Please wait..." | Out-Default
                                         #unpin McAfee LiveSafe from taskbar
                                         function UnPinFromTaskbar { param( [string]$appname )
