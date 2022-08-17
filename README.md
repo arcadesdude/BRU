@@ -79,7 +79,8 @@ https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office
 MCRP.exe
 McAfee (Consumer) Applications
 Uses MCRP.exe
-http://us.mcafee.com/apps/supporttools/mcpr/mcpr.asp
+https://download.mcafee.com/molbin/iss-loc/SupportTools/MCPR/MCPR.exe
+Note: MCRP 10.4+ needs a key to run silently. To get the key for that version you can run MCPR in GUI mode at least once and use ProcMan to see the command line arguments to copy the key needed to run it. Then you can edit Bloatware-Removal-Utility.ps1 (search for "$mcprKeys =") to put in the version of the new MCPR and the key so BRU can use it silently again. If you find new keys for new versions you can submit a pull request to have it added to the original repo (arcadesdude/BRU).
 
 # Usage
 
@@ -196,6 +197,11 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+08/17/2022
+- Fixed MCRP running silently again (see the section above Obtaining Specific Bloatware Uninstall Helpers for more info)
+- Added silent removal arguments for McAfee Security Scan Plus
+- Updated README
+
 05/20/2021
 - Fixed Office 365 detection (MS Calls it Microsoft 365 now) thanks to jduke-halls
 - Added Feature to save GUI selection list to file and then use that silently. Good for customizing different 'batches' or brands of bloatware for removal.
