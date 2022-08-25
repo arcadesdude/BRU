@@ -2055,6 +2055,7 @@ BEGIN {
         # must be regex escaped here (and powershell escaped if needed)
         "ActivClient.*",
         "Adobe\ AIR",
+        "Ai\ Meeting\ Manager\ Service",
         "^ASUS\ .*",
         "Bing\ Bar",
         "Corel\ .*",
