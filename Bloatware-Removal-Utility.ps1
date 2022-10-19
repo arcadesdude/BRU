@@ -1718,11 +1718,9 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                     if (Get-AppxPackage -AllUsers | Where {$_.PackageFullName -eq "$($removeitem.PackageFullName)"}) {
                         Write-Output "`nRemoving $($removeitem.Name)`nPackageFullName: $($removeitem.PackageFullName)" | Out-Default
                         try {
-                            write-output "1"
                             [void]$(Remove-AppxPackage -Allusers -Package "$($removeitem.PackageFullName)" -ErrorAction Ignore)
                         } catch {
                             try {
-                                write-output "2"
                                 [void]$(Remove-AppxPackage -Package "$($removeitem.PackageFullName)" -ErrorAction Ignore)
                             } catch {
                             }
