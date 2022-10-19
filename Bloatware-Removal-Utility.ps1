@@ -1715,28 +1715,20 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
                 ForEach ($removeitem in $Global:UWPappsAUtoRemove) {
 
-                    Write-Output "`nRemoving $($removeitem.Name)`nPackageFullName: $($removeitem.PackageFullName)" | Out-Default
-                    $EAPSaved = $ErrorActionPreference
-                    $ErrorActionPreference = "Stop"
-                    try {
-                        $ErrorActionPreference = "Stop"
-                        [void]$(Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)")
-                    } catch {
-                        $ErrorActionPreference = "Stop"
-                        # run it again, some OS bug means that it sometimes fails the first time (thanks for the Tip Lenovo!)
+                    if (Get-AppxPackage -AllUsers | Where {$_.PackageFullName -eq "$($removeitem.PackageFullName)"}) {
+                        Write-Output "`nRemoving $($removeitem.Name)`nPackageFullName: $($removeitem.PackageFullName)" | Out-Default
                         try {
-                            $ErrorActionPreference = "Stop"
-                            [void]$(Remove-AppxPackage -AllUsers -Package "$($removeitem.PackageFullName)")
+                            write-output "1"
+                            [void]$(Remove-AppxPackage -Allusers -Package "$($removeitem.PackageFullName)" -ErrorAction Ignore)
                         } catch {
-                            $ErrorActionPreference = "Stop"
                             try {
-                                $ErrorActionPreference = "Stop"
-                                [void]$(Remove-AppxPackage -Package "$($removeitem.PackageFullName)")
+                                write-output "2"
+                                [void]$(Remove-AppxPackage -Package "$($removeitem.PackageFullName)" -ErrorAction Ignore)
                             } catch {
                             }
                         }
                     }
-                    $ErrorActionPreference = $EAPSaved
+
                     Start-Sleep -Seconds 4
                     Write-Output "Unpinning from Start Menu" | Out-Default
                     $unpinName = $removeitem.Name
@@ -1744,7 +1736,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         $currentLivetile = ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | Where {$_.Path -match $unpinName})
                         if ( $currentLivetile ) {
                             try {
-                                $ErrorActionPreference = "Stop"
+                                $ErrorActionPreference = "Ignore"
                                 $currentLivetile.Verbs() | Where { $_.Name.replace('&','') -match 'Unpin from Start' } | % { $_.DoIt() }
                                 $ErrorActionPreference = SilentlyContinue
                             } catch {
@@ -1767,27 +1759,17 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
                 ForEach ($removeProvisioneditem in $Global:UWPappsProvisionedAppstoRemove)  {
 
-                    Write-Output "`nRemoving $($removeProvisioneditem.DisplayName)`nPackageName: $($removeProvisioneditem.PackageName)" | Out-Default
-                    $EAPSaved = $ErrorActionPreference
-                    $ErrorActionPreference = "Stop"
-                    try {
-                        $ErrorActionPreference = "Stop"
-                        [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers)
-                    } catch {
-                        $ErrorActionPreference = "Stop"
+                    if (Get-AppxProvisionedPackage -Online | Where {$_.PackageName -eq "$($removeProvisioneditem.PackageName)"}) {
+                        Write-Output "`nRemoving $($removeProvisioneditem.DisplayName)`nPackageName: $($removeProvisioneditem.PackageName)" | Out-Default
                         try {
-                            $ErrorActionPreference = "Stop"
-                            [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers)
+                            [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -Allusers -ErrorAction Ignore)
                         } catch {
-                            $ErrorActionPreference = "Stop"
                             try {
-                                $ErrorActionPreference = "Stop"
-                                [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online)
+                                [void]$(Remove-AppxProvisionedPackage -PackageName "$($removeProvisioneditem.PackageName)" -Online -ErrorAction Ignore)
                             } catch {
                             }
                         }
                     }
-                    $ErrorActionPreference = $EAPSaved
                     Start-Sleep -Seconds 4
                     Write-Output "Unpinning from Start Menu" | Out-Default
                     $unpinName = $removeProvisioneditem.DisplayName
@@ -1795,7 +1777,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                         $currentLivetile = ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | Where { $_.Path -match $unpinName })
                         if ( $currentLivetile ) {
                             try {
-                                $ErrorActionPreference = "Stop"
+                                $ErrorActionPreference = "Ignore"
                                 $currentLivetile.Verbs() | Where { $_.Name.replace('&','') -match 'Unpin from Start' } | % { $_.DoIt() }
                                 $ErrorActionPreference = SilentlyContinue
                             } catch {
