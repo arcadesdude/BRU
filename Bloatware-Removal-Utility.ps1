@@ -2700,6 +2700,8 @@ BEGIN {
         Write-Host "" | Out-Default
         Write-Verbose -Verbose "Setting default Start Menu tiles layout for new users only (doesn't apply to any current user or existing account)."
         Set-Content -Path "$($Script:dest)\exported-startlayout-noCDMads.xml" -Value $noCDMadsstartlayout
+
+        mkdir "$env:LOCALAPPDATA\Microsoft\Windows\Shell" -Force | Out-Null
         Import-StartLayout -LayoutPath "$($Script:dest)\exported-startlayout-noCDMads.xml" -MountPath "$($env:SystemDrive)\"
 
         Remove-Item "$($Script:dest)\exported-startlayout.xml" -Force -ErrorAction SilentlyContinue
