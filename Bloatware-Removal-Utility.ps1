@@ -1204,7 +1204,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             $uninstallarguments = "-uninstall"
                         }
 
-                        if ( $prog.Name -match "Dell Optimizer Service" ) {
+                        if (( $prog.Name -match "Dell Optimizer Service" ) -or ( $prog.Name -match "Dell Optimizer Core" )) {
                             $uninstallarguments = "-silent"+" "+$uninstallarguments
                         }
 
