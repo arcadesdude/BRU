@@ -197,6 +197,10 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+03/21/2025
+- Updated Default detection list, MCPR included with silent removal updated.
+- Updated README
+
 08/25/2022
 - Added default detection for Lenovo Ai Meeting Manager Service
 - Updated README
