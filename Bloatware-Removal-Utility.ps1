@@ -1496,10 +1496,10 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                         $uninstallpath = "$($mcprDir)\mccleanup.exe"
                                         Rename-Item -Path "$($mcprDir)\mccleanup.exe" -NewName "mccleanup.exe.new" -Force
                                         #copy old one 10.5.128.0
-                                        Copy-Item -Path "$($Script:dest)\mccleanup-10-5-128-0.exe" -Destination "$($mcprDir)" -Force
-                                        if ( Test-Path "$($Script:dest)\mccleanup-10-5-128-0.exe" ) {
-                                            Rename-Item -Path "$($Script:dest)\mccleanup-10-5-128-0.exe" -NewName "mccleanup.exe" -Force
-                                        }
+                                        Copy-Item -Path "$($Script:dest)\mccleanup-10-5-128-0.exe" -Destination "$($mcprDir)\mccleanup.exe" -Force
+                                        # if ( Test-Path "$($Script:dest)\mccleanup-10-5-128-0.exe" ) {
+                                        #     Rename-Item -Path "$($Script:dest)\mccleanup-10-5-128-0.exe" -NewName "mccleanup.exe" -Force
+                                        # }
 
                                         #read version from file
                                         $mcprVersion = (Get-Item "$uninstallpath" | Select-Object VersionInfo).VersionInfo.ProductVersion
