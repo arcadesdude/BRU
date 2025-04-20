@@ -196,9 +196,9 @@ Write-Output "Bloatware-Removal Initializing..." | Out-Default
 Write-Output "PowerShell Version: $($PSVersionTable.PSVersion.Major)" | Out-Default
 
 try {
-    [float]$Script:winVer = (((Get-CimInstance Win32_OperatingSystem).Version.Split('.') | Select -first 2) -join '.')
+    [version]$Script:winVer = (((Get-CimInstance Win32_OperatingSystem).Version.Split('.') | Select -first 3) -join '.')
 } catch {
-    [float]$Script:winVer = ((([Environment]::OSVersion.Version).ToString().Split('.') | Select -first 2) -join '.')
+    [version]$Script:winVer = ((([Environment]::OSVersion.Version).ToString().Split('.') | Select -first 3) -join '.')
 }
 
 [string]$Script:osArch = (@( "64" , "86" )[32 -eq (8*[IntPtr]::Size)])
@@ -489,7 +489,7 @@ if ( !($Global:isSilent) ) {
     $optionsWin10RecommendedDownloadsOffMenu.Size = New-Object System.Drawing.Size(152, 22)
     $optionsWin10RecommendedDownloadsOffMenu.Text = "Win10+ only - After removal set `"recommended`" UWP app &auto-downloads off"
     $optionsWin10RecommendedDownloadsOffMenu.TextAlign = "MiddleLeft"
-    $isWin10 = [bool]($Script:winVer -ge 10)
+    $isWin10 = [bool]($Script:winVer -ge [version]"10.0.0")
     $optionsWin10RecommendedDownloadsOffMenu.Enabled = $isWin10
     $optionsWin10RecommendedDownloadsOffMenu.Checked = $isWin10 -and $Global:optionsWin10RecommendedDownloadsOff
     function doOptionsWin10RecommendedDownloadsOffMenu($Sender,$e){
@@ -508,7 +508,7 @@ if ( !($Global:isSilent) ) {
     $optionsWin10StartMenuAdsMenu = New-Object System.Windows.Forms.ToolStripMenuItem
     $optionsWin10StartMenuAdsMenu.Name = "optionsWin10StartMenuAdsMenu"
     $optionsWin10StartMenuAdsMenu.Size = New-Object System.Drawing.Size(152, 22)
-    $optionsWin10StartMenuAdsMenu.Text = "Win10+ only - After removal set default &Start Menu layout for new users"
+    $optionsWin10StartMenuAdsMenu.Text = "Win10 only - After removal set default &Start Menu layout for new users"
     $optionsWin10StartMenuAdsMenu.TextAlign = "MiddleLeft"
     $optionsWin10StartMenuAdsMenu.Enabled = $isWin10
     $optionsWin10StartMenuAdsMenu.Checked = $isWin10 -and $Global:optionsWin10StartMenuAds
@@ -577,8 +577,8 @@ if ( !($Global:isSilent) ) {
     $viewShowUWPapps.Size = New-Object System.Drawing.Size(152, 22)
     $viewShowUWPapps.Text = "Win8+ only - Show &UWP/Metro/Modern (Win8/10+) Apps"
     $viewShowUWPapps.TextAlign = "MiddleLeft"
-    $viewShowUWPapps.Checked = $Global:showUWPapps -and ($winVer -gt 6.1)
-    $viewShowUWPapps.Enabled = ($winVer -gt 6.1)
+    $viewShowUWPapps.Checked = $Global:showUWPapps -and ($winVer -gt [version]"6.1")
+    $viewShowUWPapps.Enabled = ($winVer -gt [version]"6.1")
     function doviewShowUWPapps($Sender,$e){
         $viewShowUWPapps.Checked = !($viewShowUWPapps.Checked)
         $Global:showUWPapps = $viewShowUWPapps.Checked
@@ -832,7 +832,7 @@ if ( !($Global:isSilent) ) {
         $progslistSelected = @( $Script:progslisttoremove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name )
     }
 
-    if ( $Script:winVer -gt 6.1 ) {
+    if ( $Script:winVer -gt [version]"6.1" ) {
 
         $Global:UWPappsAUtoRemove = $Global:UWPappsAUtoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
         $Global:UWPappsProvisionedAppstoRemove = $Global:UWPappsProvisionedAppstoRemove | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
@@ -902,7 +902,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         Write-Verbose -Verbose "Selected and ordered programs to be removed:"
         Write-Output $removeOrderedSelectedList | Out-Default
 
-        if ( $Script:winVer -gt 6.1 ) {
+        if ( $Script:winVer -gt [version]"6.1" ) {
             Write-Output "" | Out-Default
             Write-Verbose -Verbose "Selected and ordered UWPappsAU (Installed Win8/10+ apps) to be removed:"
             Write-Output $removeOrderedSelectedUWPappsAU | Select-Object Name, Version, Publisher, PackageFullName | Format-List | Out-Default
@@ -921,7 +921,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
         $Script:progslisttoremove = $removeOrderedSelectedList
 
 
-        if ( $Script:winVer -gt 6.1 ) {
+        if ( $Script:winVer -gt [version]"6.1" ) {
             #$Global:UWPappsAUtoRemoveOrginal = $Global:UWPappsAUtoRemove
             #$Global:UWPappsProvisionedAppstoRemoveOrginal = $Global:UWPappsProvisionedAppstoRemove
             $Global:UWPappsAUtoRemove = $removeOrderedSelectedUWPappsAU
@@ -1728,7 +1728,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
     ###############################################################################################################
 
         # Remove non Microsoft Metro/UWP/"Modern" Apps
-        if ( ($Script:winVer -gt 6.1 -and $isConfirmed) -and !($Global:isDetectOnlyDryRunSilentOption) ) { # UWP apps only in Win 2012/8+
+        if ( ($Script:winVer -gt [version]"6.1" -and $isConfirmed) -and !($Global:isDetectOnlyDryRunSilentOption) ) { # UWP apps only in Win 2012/8+
 
             # NOTE: Get-AppxProvisionedPackage uses PackageName and Get-AppxPackage uses PackageFullName
 
@@ -1818,7 +1818,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
 
             doWindows10Options # if Win10+ and Option(s) enabled
 
-        } # end if ( $Script:winVer -gt 6.1 -and $isConfirmed )
+        } # end if ( $Script:winVer -gt [version]"6.1" -and $isConfirmed )
 
     ###############################################################################################################
 
@@ -1864,7 +1864,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
     #   } # end of if ( ($Script:progslisttoremove) -or ($Global:UWPappsAUtoRemove) -or ($Global:UWPappsProvisionedAppstoRemove) )
 
         $isConfirmed = $false
-        if ( $Script:winVer -ge 10 ) {
+        if ( $Script:winVer -gt [version]"10.0" ) {
             $isConfirmed = systemRestorePointIfRequired
             if ( !($isConfirmed) ) {
                 Write-Output "You have chosen to not proceed with removal or change settings. No changes will be made."
@@ -1948,7 +1948,7 @@ BEGIN {
 
         ###############################################################################################################
 
-        if ( $Script:winVer -gt 6.1) { # UWP apps only in Win 2012/8+
+        if ( $Script:winVer -gt [version]"6.1") { # UWP apps only in Win 2012/8+
             #UWP Win8/Win10+ Apps
 
             Write-Output "" | Out-Default
@@ -1980,7 +1980,7 @@ BEGIN {
             $Global:UWPappsProvisionedApps = $Global:UWPappsProvisionedApps | Where-Object { $_.DisplayName } | Add-Member -MemberType AliasProperty -Name Name -Value DisplayName -PassThru | Select-Object Name, Architecture, Build, DisplayName, InstallLocation, LogLevel, LogPath, MajorVersion, MinorVersion, Online, PackageName, Path, PublisherId, Regions, ResourceId, RestartNeeded, Revision, ScratchDirectory, SysDrivePath, Version, WinPath
 
 
-        } # end if ( $Script:winVer -gt 6.1)
+        } # end if ( $Script:winVer -gt [version]"6.1")
 
         ###############################################################################################################
 
@@ -2388,7 +2388,7 @@ BEGIN {
 
         ###############################################################################################################
 
-        if ( $Script:winVer -gt 6.1) { # UWP apps only in Win 2012/8+
+        if ( $Script:winVer -gt [version]"6.1") { # UWP apps only in Win 2012/8+
 
             ############## Core regular expression matching magic UWP / Windows Store Programs ##############
 
@@ -2454,21 +2454,21 @@ BEGIN {
 
         # At this point:
         #$Global:proglist exists
-        #$Global:UWPappsAU exists if ( $Script:winVer -gt 6.1 )
-        #$Global:UWPappsProvisionedApps exists if ( $Script:winVer -gt 6.1 )
+        #$Global:UWPappsAU exists if ( $Script:winVer -gt [version]"6.1" )
+        #$Global:UWPappsProvisionedApps exists if ( $Script:winVer -gt [version]"6.1" )
 
 
         # following 3 variables are modified by the GUI selection list or command line options
         #$Script:progslisttoremove exists
-        #$Global:UWPappsAUtoRemove exists if ( $Script:winVer -gt 6.1 )
-        #$Global:UWPappsProvisionedAppstoRemove exists if ( $Script:winVer -gt 6.1 )
+        #$Global:UWPappsAUtoRemove exists if ( $Script:winVer -gt [version]"6.1" )
+        #$Global:UWPappsProvisionedAppstoRemove exists if ( $Script:winVer -gt [version]"6.1" )
 
         $Script:proglistviewColumnsArray = @('DisplayName','Name','Version','Publisher','UninstallString','QuietUninstallString','IdentifyingNumber','PackageFullName','PackageName')
         $Global:progslisttodisplay = $Global:proglist | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort-Object Name
         #$Global:orignalprogslisttodisplay = $Global:progslisttodisplay
         # Add in the UWP Win8/10+ apps to the list
 
-        if ( $Script:winVer -gt 6.1 ) {
+        if ( $Script:winVer -gt [version]"6.1" ) {
             $Global:UWPappsAUlisttodisplay = $Global:UWPappsAU | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty DisplayName | Sort Name
             $Global:UWPappsProvisionedAppslisttodisplay = $Global:UWPappsProvisionedApps | Select-Object -Property $proglistviewColumnsArray -ExcludeProperty Name | Select-Object @{Name="Name";Expression={$_.DisplayName}},* -ExcludeProperty DisplayName | Sort Name
             $Global:progslisttodisplay = @($Global:progslisttodisplay) + @($Global:UWPappsAUlisttodisplay)
@@ -2574,7 +2574,7 @@ BEGIN {
             if ( $isConfirmed ) {
                 Write-Host "" | Out-Default
                 Write-Host "Creating a System Restore Point called BeforeBloatwareRemoval...`n" | Out-Default
-                if ( $Script:winVer -gt 6.2) { # Win8+
+                if ( $Script:winVer -gt [version]"6.2") { # Win8+
                     $savedKey = $null
                     $key = Get-Item "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\SystemRestore"
                     if ( $key.SystemRestorePointCreationFrequency -ne $null ) {
@@ -2587,7 +2587,7 @@ BEGIN {
                 try {
                     Checkpoint-Computer -Description "BeforeBloatwareRemoval" -RestorePointType "APPLICATION_UNINSTALL" -ErrorAction Stop
                 } catch {
-                    if ( $Script:winVer -gt 6.2 -and ( $savedKey -ne $null ) ) { # Win8+
+                    if ( $Script:winVer -gt [version]"6.2" -and ( $savedKey -ne $null ) ) { # Win8+
                         Set-ItemProperty $key.PsPath -name 'SystemRestorePointCreationFrequency' -value $savedKey.SystemRestorePointCreationFrequency -Type DWord
                     }
 
@@ -2599,7 +2599,7 @@ BEGIN {
                     [bool]$isConfirmed = doOptionsRequireConfirmation
                 } # end catch
 
-                if ( $Script:winVer -gt 6.2 -and ( $savedKey -ne $null )) { # Win8+
+                if ( $Script:winVer -gt [version]"6.2" -and ( $savedKey -ne $null )) { # Win8+
                     Set-ItemProperty $key.PsPath -name 'SystemRestorePointCreationFrequency' -value $savedKey.SystemRestorePointCreationFrequency -Type DWord
                 }
                 # Turn off additional confirmation prompt
@@ -2714,35 +2714,38 @@ BEGIN {
 #############
 
     function doOptionsWin10StartMenuAds( ) {
-        Write-Host "" | Out-Default
-        Write-Verbose -Verbose "Exporting Start Menu tiles layout."
+        if ( $Script:winVer -lt [version]"10.0.22000" -and $Script:winVer -ge [version]"10.0" ) { # if Win10 but not Win11+
+            Write-Host "" | Out-Default
+            Write-Verbose -Verbose "Exporting Start Menu tiles layout."
 
-        try {
-            Export-StartLayout "$($Script:dest)\exported-startlayout.xml"
-        } catch {
-            Write-Warning "Export-StartLayout did not complete. Try updating Windows and rebooting first, then re-running this with this option enabled again."
+            try {
+                Export-StartLayout "$($Script:dest)\exported-startlayout.xml"
+            } catch {
+                Write-Warning "Export-StartLayout did not complete. Try updating Windows and rebooting first, then re-running this with this option enabled again."
+            }
+
+
+            Write-Host "" | Out-Default
+            Write-Verbose -Verbose "Removing Advertisements (Windows ContentDeliveryManager) Ads from exported Layout for new users."
+            $startlayout = Get-Content "$($Script:dest)\exported-startlayout.xml" -Raw
+            $noCDMadsstartlayout = $($startlayout -Replace ".*<start:SecondaryTile\ AppUserModelID=`"Microsoft\.Windows\.ContentDeliveryManager.*\ />.*\n.*?")
+            Write-Host "" | Out-Default
+            Write-Verbose -Verbose "Setting default Start Menu tiles layout for new users only (doesn't apply to any current user or existing account)."
+            Set-Content -Path "$($Script:dest)\exported-startlayout-noCDMads.xml" -Value $noCDMadsstartlayout
+
+            mkdir "$env:LOCALAPPDATA\Microsoft\Windows\Shell" -Force | Out-Null
+            Import-StartLayout -LayoutPath "$($Script:dest)\exported-startlayout-noCDMads.xml" -MountPath "$($env:SystemDrive)\"
+
+            Remove-Item "$($Script:dest)\exported-startlayout.xml" -Force -ErrorAction SilentlyContinue
+            Remove-Item "$($Script:dest)\exported-startlayout-noCDMads.xml" -Force -ErrorAction SilentlyContinue
         }
 
-
-        Write-Host "" | Out-Default
-        Write-Verbose -Verbose "Removing Advertisements (Windows ContentDeliveryManager) Ads from exported Layout for new users."
-        $startlayout = Get-Content "$($Script:dest)\exported-startlayout.xml" -Raw
-        $noCDMadsstartlayout = $($startlayout -Replace ".*<start:SecondaryTile\ AppUserModelID=`"Microsoft\.Windows\.ContentDeliveryManager.*\ />.*\n.*?")
-        Write-Host "" | Out-Default
-        Write-Verbose -Verbose "Setting default Start Menu tiles layout for new users only (doesn't apply to any current user or existing account)."
-        Set-Content -Path "$($Script:dest)\exported-startlayout-noCDMads.xml" -Value $noCDMadsstartlayout
-
-        mkdir "$env:LOCALAPPDATA\Microsoft\Windows\Shell" -Force | Out-Null
-        Import-StartLayout -LayoutPath "$($Script:dest)\exported-startlayout-noCDMads.xml" -MountPath "$($env:SystemDrive)\"
-
-        Remove-Item "$($Script:dest)\exported-startlayout.xml" -Force -ErrorAction SilentlyContinue
-        Remove-Item "$($Script:dest)\exported-startlayout-noCDMads.xml" -Force -ErrorAction SilentlyContinue
     }
 
 #############
 
     function doWindows10Options( ) {
-        if ( $Script:winVer -ge 10 ) {
+        if ( $Script:winVer -gt [version]"10.0" ) {
             if ( $Global:optionsWin10RecommendedDownloadsOff ) {
                 Write-Host "`nConfirm setting Win10 UWP `"recommended`" apps (ads) auto-download to be off." | Out-Default
             }
@@ -2767,7 +2770,7 @@ BEGIN {
             } else { # end if ( $Global:optionsWin10StartMenuAds )
                 Write-Verbose -Verbose "You have chosen to not remove the Win10 ContentDeliveryManager Ads in the Start Menu for new user accounts (doesn't affect existing accounts)"
             }
-        } # end if ( $Script:winVer -ge 10 )
+        } # end if ( $Script:winVer -gt [version]"10.0" )
     } # end function doWindows10Options( )
 
 #############
