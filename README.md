@@ -197,6 +197,10 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+05/11/2025
+- Add Alienware Command Center Package Manager (AWCC) silent removal
+- Updated README
+
 04/20/2025
 - Include MCPR fix in release to run silently, change winver detection from float to version type, make start menu layout Win10 only (don't work on Win11)
 - Updated README
