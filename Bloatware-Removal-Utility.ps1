@@ -1212,6 +1212,10 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             $uninstallarguments = "-uninstall"
                         }
 
+                        if (( $prog.Name -match "Alienware Command Center Package Manager" )) {
+                            $uninstallarguments = "-silent"+" "+$uninstallarguments
+                        }
+
                         if (( $prog.Name -match "Dell Optimizer Service|Dell Optimizer Core|Dell Optimizer|Dell Precision Optimizer" )) {
                             $uninstallarguments = "-silent"+" "+$uninstallarguments
                         }
@@ -1401,6 +1405,7 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                                     -and $prog.Name -match "CyberLink\ Media.*Suite")) `
                             -and ( $prog.Name -notmatch "HP\ Collaboration\ Keyboard" ) `
                             -and ( $prog.Name -notmatch "HP\ Connection\ Optimizer" ) `
+                            -and ( $prog.Name -notmatch "Alienware\ Command\ Center\ Package\ Manager" ) `
                             -and ( $prog.Name -notmatch "Dell\ Optimizer\ Service|Dell\ Optimizer|Dell\ Precision\ Optimizer" ) `
                             -and ( $prog.Name -notmatch "MyDell" ) `
                             ) {
@@ -2260,9 +2265,10 @@ BEGIN {
         $specialcasestoremove = (
         # special cases below will be removed later after the matching list above are removed first
         # VERY IMPORTANT, the order in which these are listed is important as they'll be removed in that order. Some programs need to be removed before others. Matches any part of the string. Will be regex escaped later.
+        "Alienware Command Center Package Manager", # needs -silent instead of /S switch
         "CyberLink Media Suite",
         "Dell Optimizer",
-        "Dell Precision Optimizer", # Need to create iss file for this possibly or try -silent instead of /S switch
+        "Dell Precision Optimizer", # needs -silent instead of /S switch
         "Dell SupportAssist",
         "Dell Data Vault",
         "HP Setup",
