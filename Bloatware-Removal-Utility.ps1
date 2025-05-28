@@ -1657,6 +1657,10 @@ if ( ($button -ne "Cancel") -or ($Global:isSilent) ) {
                             }
                         } # end if ( $prog.UninstallString -match "NSIS" )
 
+                        if ( $prog.Name -like "Smart Connect" ) {
+                            $uninstallarguments = $uninstallarguments+" /S"
+                        }
+
                         if ( $prog.Name -like "PDF Complete*" ) {
                             $uninstallarguments = "/S /x"+" "+$uninstallarguments
                         }
@@ -2110,6 +2114,7 @@ BEGIN {
         "PlayMemories",
         "proDAD\ Adorage.*",
         "Reader\ for\ PC",
+        "Smart\ Connect",
         "Softex.*",
         "ThinkVantage\ .*",
         "VAIO\ .*",

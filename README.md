@@ -197,6 +197,10 @@ Logfile will be saved in c:\BRU (or you can edit script to suit your needs). If 
 Be sure to reboot after running this as some programs need a reboot when uninstalling. Also you can compare the programs and features list of currently installed programs and see if there is anything left you would need to manually uninstall.
 
 # Version History
+05/28/2025
+- Add Motorola Smart Connect silent removal
+- Updated README
+
 05/11/2025
 - Add Alienware Command Center Package Manager (AWCC) silent removal
 - Updated README
